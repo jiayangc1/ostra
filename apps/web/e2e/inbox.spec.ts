@@ -3,6 +3,8 @@ import { expect, openInbox, test } from "./fixtures.ts";
 test("open a thread from the keyboard and read it", async ({ signIn }) => {
   const page = await signIn();
   await openInbox(page);
+  // Rows: the Notifications bundle (a fresh sign-in code), Priya, then Marcus.
+  await page.keyboard.press("j");
   await page.keyboard.press("j");
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/inbox\/[0-9a-f-]{36}$/);
@@ -35,9 +37,12 @@ test("label a thread with l", async ({ signIn }) => {
   const picker = page.getByRole("dialog", { name: "Label" });
   await expect(picker).toBeVisible();
   await page.keyboard.type("Legal");
+  // The label shows at once (optimistic); wait for the save before reloading.
+  const saved = page.waitForResponse((r) => /\/threads\/[^/]+\/labels\//.test(r.url()) && r.request().method() === "PUT");
   await page.keyboard.press("Enter");
   await page.keyboard.press("Escape");
   await expect(row.getByText("Legal")).toBeVisible();
+  expect((await saved).ok()).toBeTruthy();
   // Survives a reload: it was saved, not just drawn.
   await page.reload();
   await expect(page.locator("[data-thread-id]").filter({ hasText: "Mom" }).getByText("Legal")).toBeVisible();
@@ -58,6 +63,8 @@ test("⌘K archives the thread and navigates", async ({ signIn }) => {
   await expect(page.getByRole("status").filter({ hasText: "Archived" })).toBeVisible();
 
   await page.keyboard.press("ControlOrMeta+k");
+  await expect(bar).toBeVisible();
+  await expect(bar.getByRole("combobox")).toBeFocused();
   await page.keyboard.type("go to archive");
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/archive$/);
@@ -71,5 +78,5 @@ test("y changes the category in one keystroke", async ({ signIn }) => {
   await page.keyboard.press("y");
   await page.keyboard.press("3");
   await expect(page.locator("[data-thread-id]").filter({ hasText: "Diego Alvarez" })).toHaveCount(0);
-  await expect(page.locator("[data-bundle=notification]")).toContainText("12");
+  await expect(page.locator("[data-bundle=notification]")).toContainText("13");
 });

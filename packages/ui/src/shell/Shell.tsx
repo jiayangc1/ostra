@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router";
-import { CATEGORIES, VISIBLE_FOLDERS, type Account, type Category, type Label, type MessageDetail, type VirtualFolder } from "@ostra/core";
-import { AlertCircle, Archive, Inbox, LogOut, Mail, MailOpen, Moon, PenSquare, RefreshCw, Settings, ShieldAlert, Sun, Tag, Trash2, Layers } from "lucide-react";
+import { CATEGORIES, VISIBLE_FOLDERS, displayName, type Account, type Category, type Label, type MessageDetail, type MessageEvent, type VirtualFolder } from "@ostra/core";
+import { AlertCircle, Archive, CalendarDays, CalendarPlus, Inbox, KeyRound, LogOut, Mail, MailOpen, Moon, PenSquare, RefreshCw, Settings, ShieldAlert, Sun, Tag, Trash2, Layers } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import { CommandBar, type CommandItem } from "../components/CommandBar.tsx";
 import { Dot } from "../components/Dot.tsx";
@@ -14,6 +14,7 @@ import { CATEGORY_NAMES } from "../app/format.ts";
 import { useHotkeys, type Hotkey } from "../app/hotkeys.ts";
 import { useMailStore, useStore, viewKey, type View } from "../app/store.ts";
 import { MessageList } from "./MessageList.tsx";
+import { CodeBar, isFreshCode, useMinuteClock, type EventActions } from "./Extracted.tsx";
 import { Reader } from "./Reader.tsx";
 import { buildRows, type Row } from "./rows.ts";
 import { FOLDERS, Sidebar } from "./Sidebar.tsx";
@@ -76,11 +77,15 @@ export function Shell({ ext = {} }: { ext?: ShellExtensions }) {
   const list = useStore((s) => s.lists[key]);
   const detail = useStore((s) => (openId ? s.details[openId] : undefined));
   const connection = useStore((s) => s.connection);
+  const calendars = useStore((s) => s.calendars);
+  const now = useMinuteClock();
+  const [dismissedCode, setDismissedCode] = useState<string | null>(null);
+  const [picking, setPicking] = useState<{ messageId: string; event: MessageEvent } | null>(null);
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   // The keyboard cursor belongs to a view; switching views starts at the top.
   const [cursorState, setCursorState] = useState({ key, index: 0, openId: null as string | null });
-  const [palette, setPalette] = useState<null | "command" | "label" | "category">(null);
+  const [palette, setPalette] = useState<null | "command" | "label" | "category" | "calendar">(null);
   const [detailErrorState, setDetailError] = useState<{ id: string; message: string } | null>(null);
   const detailError = detailErrorState && detailErrorState.id === openId ? detailErrorState.message : null;
   const [narrow, setNarrow] = useState(() => typeof matchMedia !== "undefined" && matchMedia("(max-width: 1279px)").matches);
@@ -99,6 +104,12 @@ export function Shell({ ext = {} }: { ext?: ShellExtensions }) {
   useEffect(() => {
     document.title = `${title} · Ostra`;
   }, [title]);
+
+  // Calendars for "Add to calendar": once per session.
+  const booted = !!boot;
+  useEffect(() => {
+    if (booted && store.getState().calendars === null) void store.loadCalendars().catch(() => {});
+  }, [booted, store]);
 
   // Load the list whenever the view changes (cached rows render meanwhile).
   useEffect(() => {
@@ -178,6 +189,31 @@ export function Shell({ ext = {} }: { ext?: ShellExtensions }) {
     }, () => {});
   };
 
+  // The newest fresh code across every thread we know about (bundled notifications included).
+  const latestCode = useMemo(() => {
+    let best: { threadId: string; sender: string; code: NonNullable<(typeof threads)[string]["code"]> } | null = null;
+    for (const t of Object.values(threads)) {
+      if (!t.code || !isFreshCode(t.code, now) || t.folder === "trash" || t.folder === "spam") continue;
+      if (!best || t.code.sentAt > best.code.sentAt) best = { threadId: t.id, sender: displayName(t.from), code: t.code };
+    }
+    return best;
+  }, [threads, now]);
+  const shownCode = latestCode && latestCode.code.messageId !== dismissedCode ? latestCode : null;
+  const copyCode = useCallback((v: string) => store.copyCode(v), [store]);
+
+  const eventActions: EventActions = {
+    calendars,
+    defaultCalendar: boot?.settings.defaultCalendar ?? null,
+    onAdd: (messageId, event) => openId && store.addEvent(openId, messageId, event.index),
+    onPick: (messageId, event) => {
+      setPicking({ messageId, event });
+      setPalette("calendar");
+    },
+    onDownload: (messageId, event) => void downloadEvent(store, messageId, event),
+    onConnect: () => navigate("/settings/calendars"),
+  };
+  const openEvent = useMemo(() => detail?.messages.flatMap((m) => m.events.map((e) => ({ messageId: m.id, event: e }))).find((x) => x.event.added.length === 0), [detail]);
+
   const go = (folder: VirtualFolder) => navigate(hrefFor({ kind: "folder", folder, accountId: view.kind === "folder" ? view.accountId : undefined }));
 
   const hotkeys: Hotkey[] = [
@@ -213,6 +249,7 @@ export function Shell({ ext = {} }: { ext?: ShellExtensions }) {
     { keys: "g s", run: () => go("sent") },
     { keys: "g d", run: () => go("drafts") },
     { keys: "g a", run: () => go("archive") },
+    { keys: "shift+c", run: () => latestCode && void copyCode(latestCode.code.value), enabled: !!latestCode },
   ];
   useHotkeys(hotkeys, palette === null);
   // ⌘K must still close the palette while it's open.
@@ -236,6 +273,10 @@ export function Shell({ ext = {} }: { ext?: ShellExtensions }) {
       );
       if (target.folder !== "inbox") items.push({ id: "to-inbox", title: "Move to inbox", group: "Mail", icon: <Inbox size={14} />, run: () => runAction("inbox") });
     }
+    if (latestCode) items.push({ id: "copy-code", title: `Copy code ${latestCode.code.value}`, keywords: "verification otp 2fa", group: "Mail", shortcut: "shift+c", icon: <KeyRound size={14} />, run: () => void copyCode(latestCode.code.value) });
+    if (openEvent && openId) {
+      items.push({ id: "add-event", title: `Add "${openEvent.event.title}" to calendar`, keywords: "calendar event schedule", group: "Mail", icon: <CalendarPlus size={14} />, run: () => void store.addEvent(openId, openEvent.messageId, openEvent.event.index) });
+    }
     items.push(...(ext.commands ?? []));
     for (const f of FOLDERS) items.push({ id: `go-${f.folder}`, title: `Go to ${f.name}`, group: "Navigate", shortcut: f.shortcut, icon: <f.icon size={14} />, run: () => go(f.folder) });
     for (const l of boot?.labels ?? []) items.push({ id: `label-${l.id}`, title: l.name, keywords: "label go", group: "Labels", icon: <Dot color={l.color} />, run: () => navigate(hrefFor({ kind: "label", labelId: l.id })) });
@@ -245,12 +286,13 @@ export function Shell({ ext = {} }: { ext?: ShellExtensions }) {
     items.push(
       { id: "theme", title: resolved === "dark" ? "Switch to light theme" : "Switch to dark theme", group: "Ostra", icon: resolved === "dark" ? <Sun size={14} /> : <Moon size={14} />, run: () => setPreference(resolved === "dark" ? "light" : "dark") },
       { id: "settings", title: "Settings", group: "Ostra", icon: <Settings size={14} />, run: () => navigate("/settings") },
+      { id: "calendars", title: "Calendars", keywords: "connect google apple icloud outlook", group: "Ostra", icon: <CalendarDays size={14} />, run: () => navigate("/settings/calendars") },
       { id: "refresh", title: "Refresh", group: "Ostra", icon: <RefreshCw size={14} />, run: () => void store.reconcile([view]) },
       { id: "signout", title: "Sign out", group: "Ostra", icon: <LogOut size={14} />, run: () => void store.clearCache().then(() => auth.signOut()) },
     );
     return items;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target, boot, view, resolved, compose, ext.commands]);
+  }, [target, boot, view, resolved, compose, ext.commands, latestCode, openEvent, openId]);
 
   const labelItems: CommandItem[] = useMemo(
     () =>
@@ -272,6 +314,24 @@ export function Shell({ ext = {} }: { ext?: ShellExtensions }) {
       })),
     [target, store],
   );
+
+  const calendarItems: CommandItem[] = useMemo(() => {
+    if (!picking || !openId) return [];
+    const def = boot?.settings.defaultCalendar;
+    return (calendars ?? []).flatMap((conn) =>
+      conn.calendars.map((cal) => ({
+        id: `${conn.id}:${cal.id}`,
+        title: cal.name,
+        group: conn.serverLabel ? `${conn.account} · ${conn.serverLabel}` : conn.account,
+        keywords: `${conn.provider} ${conn.account}`,
+        icon: <span className="h-2 w-2 rounded-full" style={{ background: cal.color ?? "var(--o-gray)" }} />,
+        checked: picking.event.added.some((p) => p.connectionId === conn.id && p.calendarId === cal.id),
+        hint: def?.connectionId === conn.id && def.calendarId === cal.id ? "default" : undefined,
+        disabled: conn.status === "needs_reauth",
+        run: () => void store.addEvent(openId, picking.messageId, picking.event.index, { connectionId: conn.id, calendarId: cal.id }),
+      })),
+    );
+  }, [picking, openId, calendars, boot?.settings.defaultCalendar, store]);
 
   const reauth = (boot?.accounts ?? []).filter((a: Account) => a.status === "needs_reauth");
   const summary = openId ? (threads[openId] ?? null) : null;
@@ -327,6 +387,16 @@ export function Shell({ ext = {} }: { ext?: ShellExtensions }) {
           </div>
         )}
 
+        {shownCode && (
+          <CodeBar
+            code={shownCode.code}
+            sender={shownCode.sender}
+            onCopy={copyCode}
+            onOpen={() => navigate(hrefFor(view, shownCode.threadId))}
+            onDismiss={() => setDismissedCode(shownCode.code.messageId)}
+          />
+        )}
+
         {loading ? (
           <ListSkeleton rows={10} />
         ) : list?.status === "error" ? (
@@ -347,6 +417,7 @@ export function Shell({ ext = {} }: { ext?: ShellExtensions }) {
             openId={openId}
             onActivate={activate}
             onEndReached={() => void store.loadList(view, { more: true }).catch(() => {})}
+            onCopyCode={copyCode}
           />
         )}
       </section>
@@ -366,14 +437,39 @@ export function Shell({ ext = {} }: { ext?: ShellExtensions }) {
           onRetry={() => openId && store.loadThread(openId).then(() => setDetailError(null), (e: Error) => setDetailError({ id: openId, message: e.message }))}
           onDownload={(messageId, index, filename) => void downloadAttachment(store, messageId, index, filename)}
           footer={openId && ext.readerFooter ? ext.readerFooter(openId) : null}
+          onCopyCode={copyCode}
+          events={eventActions}
+          timeZone={boot?.settings.timeZone ?? undefined}
         />
       </main>
 
       <CommandBar open={palette === "command"} onClose={() => setPalette(null)} items={commandItems} />
       <CommandBar open={palette === "label"} onClose={() => setPalette(null)} items={labelItems} keepOpen label="Label" placeholder="Label as…" emptyText="No labels yet. Add some in Settings." footer="Enter toggles · Esc closes" />
       <CommandBar open={palette === "category"} onClose={() => setPalette(null)} items={categoryItems} label="Category" placeholder="Move to category…" />
+      <CommandBar
+        open={palette === "calendar"}
+        onClose={() => {
+          setPalette(null);
+          setPicking(null);
+        }}
+        items={calendarItems}
+        label="Add to calendar"
+        placeholder={picking ? `Add "${picking.event.title}" to…` : "Add to…"}
+        emptyText="No calendars connected. Add one in Settings → Calendars."
+      />
     </div>
   );
+}
+
+async function downloadEvent(store: ReturnType<typeof useMailStore>, messageId: string, event: MessageEvent) {
+  const blob = await store.downloadEvent(messageId, event.index);
+  if (!blob) return;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${event.title.replace(/[^\w .-]+/g, "").trim() || "event"}.ics`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
 async function downloadAttachment(store: ReturnType<typeof useMailStore>, messageId: string, index: number, filename: string) {

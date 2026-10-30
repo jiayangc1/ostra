@@ -7,6 +7,7 @@ import type { Logger } from "../lib/log.ts";
 import type { JobQueue } from "../lib/queue.ts";
 import type { RealtimeHub } from "../lib/realtime.ts";
 import type { AiService } from "./ai.ts";
+import type { CalendarFactory } from "./calendars.ts";
 
 export interface ProviderContext<C = unknown> {
   account: AccountRow;
@@ -35,6 +36,8 @@ export interface Services {
   hub: RealtimeHub;
   providers: ProviderRegistry;
   ai: AiService;
+  /** Builds a client for a connected calendar. */
+  calendars: CalendarFactory;
   log: Logger;
   /** Verifies a session token; null when invalid. */
   verifyToken(token: string): Promise<AuthIdentity | null>;

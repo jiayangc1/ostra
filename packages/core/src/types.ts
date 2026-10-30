@@ -1,3 +1,5 @@
+import type { ExtractedEvent } from "./extract/events.ts";
+
 export const PROVIDER_KINDS = ["gmail", "outlook", "imap", "resend"] as const;
 export type ProviderKind = (typeof PROVIDER_KINDS)[number];
 
@@ -114,6 +116,32 @@ export interface ThreadSummary {
   labels: ThreadLabel[];
   messageCount: number;
   hasAttachments: boolean;
+  /** The newest one-time code in the thread's incoming mail. The client hides it once it's stale. */
+  code: ThreadCode | null;
+  /** Calendar events found anywhere in the thread. */
+  eventCount: number;
+}
+
+export interface ThreadCode {
+  value: string;
+  messageId: string;
+  /** When the message carrying it was sent (ISO). */
+  sentAt: string;
+}
+
+/** Where an event from a message was put. */
+export interface EventPlacement {
+  connectionId: string;
+  calendarId: string;
+  calendarName: string | null;
+  /** Link to the event in the calendar's own app, when the provider gives one. */
+  url: string | null;
+  addedAt: string;
+}
+
+export interface MessageEvent extends ExtractedEvent {
+  index: number;
+  added: EventPlacement[];
 }
 
 export interface MessageDetail {
@@ -135,6 +163,8 @@ export interface MessageDetail {
   folder: VirtualFolder;
   isRead: boolean;
   labels: ThreadLabel[];
+  code: string | null;
+  events: MessageEvent[];
 }
 
 export interface ThreadDetail extends ThreadSummary {
@@ -147,6 +177,12 @@ export interface UserSettings {
   autoLabel: boolean;
   aiEnabled: boolean;
   onboarded: boolean;
+  /** IANA zone, set from the browser; used to read times written in plain text. */
+  timeZone: string | null;
+  /** Where "Add to calendar" puts events without asking. */
+  defaultCalendar: { connectionId: string; calendarId: string } | null;
+  /** Look for events in plain-text mail (needs AI). .ics invites are always read. */
+  findEvents: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -155,7 +191,33 @@ export const DEFAULT_SETTINGS: UserSettings = {
   autoLabel: true,
   aiEnabled: true,
   onboarded: false,
+  timeZone: null,
+  defaultCalendar: null,
+  findEvents: true,
 };
+
+export const CALENDAR_PROVIDERS = ["google", "microsoft", "caldav"] as const;
+export type CalendarProviderKind = (typeof CALENDAR_PROVIDERS)[number];
+
+export interface CalendarInfo {
+  id: string;
+  name: string;
+  color: string | null;
+  primary: boolean;
+}
+
+/** A connected calendar account (separate from mail accounts). */
+export interface CalendarConnection {
+  id: string;
+  provider: CalendarProviderKind;
+  /** The signed-in address or Apple ID. */
+  account: string;
+  /** "iCloud", or the CalDAV server's host. */
+  serverLabel: string | null;
+  status: "active" | "needs_reauth" | "error";
+  error: string | null;
+  calendars: CalendarInfo[];
+}
 
 export interface OutgoingMessage {
   to: Address[];

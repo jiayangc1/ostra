@@ -6,3 +6,5 @@ export * from "./dedupe.ts";
 export * from "./smart-from.ts";
 export * from "./templates.ts";
 export * from "./imap-presets.ts";
+export * from "./extract/codes.ts";
+export * from "./extract/events.ts";

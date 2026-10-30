@@ -5,6 +5,8 @@ export interface JobMap {
   sync: { accountId: string; mode: "initial" | "incremental" };
   /** Categorize + auto-label freshly ingested messages. */
   ai: { userId: string; messageIds: string[] };
+  /** Find calendar events in freshly ingested messages (after categorizing). */
+  events: { userId: string; messageIds: string[] };
   /** Push a provider action (archive, trash...) for one message in one account. */
   action: { accountId: string; providerMessageId: string; action: import("@ostra/core").ProviderAction };
   /** Delete everything for a user (Clerk user.deleted). */

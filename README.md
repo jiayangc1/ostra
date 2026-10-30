@@ -2,6 +2,8 @@
 
 Every inbox, one place. Ostra merges every email account you own (Gmail, Outlook, any IMAP host, and custom domains through Resend) into one fast, keyboard-first list, puts real mail from real people on top, and keeps newsletters, notifications and promotions out of the way.
 
+It also pulls the useful bits out of mail: one-time sign-in codes get a one-tap copy button (and `⇧C` from anywhere), and calendar invites or plans like "dinner Thursday at 7" become event cards you can add to Google Calendar, Outlook or Apple Calendar in one click.
+
 ## Layout
 
 ```
@@ -15,7 +17,8 @@ packages/
               mapping, Message-ID dedupe, smart "from", MIME (Node-only subpaths)
   ui/         Every screen and component (Geist design system)
   db/         Drizzle schema + migrations (Postgres, or embedded PGlite)
-  ai/         LLMProvider, heuristics, categorize, auto-label, writing, pre-send check
+  ai/         LLMProvider, heuristics, categorize, auto-label, writing, pre-send check, event finding
+  calendar/   Google Calendar, Outlook (Graph) and CalDAV (iCloud) clients behind one interface
   sync-gmail, sync-outlook, sync-imap, sync-resend
               One MailProvider per provider
 ```
@@ -75,6 +78,7 @@ pnpm --filter @ostra/desktop build
 | `e` | archive | `y` | change category (then `1`–`4`) |
 | `#` | trash | `Tab` | open the AI draft |
 | `!` | spam | `⌘Enter` | send |
+| `⇧C` | copy the latest sign-in code | | |
 | `g i` `g s` `g d` | inbox / sent / drafts | `⌘J` | AI in the composer |
 
 See [docs/DECISIONS.md](docs/DECISIONS.md) for the choices the build prompt left open.

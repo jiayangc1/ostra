@@ -17,6 +17,8 @@ const t = (id: string, category: Category, isRead = false): ThreadSummary => ({
   labels: [],
   messageCount: 1,
   hasAttachments: false,
+  code: null,
+  eventCount: 0,
 });
 
 const threads = Object.fromEntries(

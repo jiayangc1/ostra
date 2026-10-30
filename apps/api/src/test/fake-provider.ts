@@ -7,6 +7,9 @@ export class FakeProvider implements MailProvider {
   actions: { id: string; action: ProviderAction }[] = [];
   sent: { message: OutgoingMessage; identity: IdentityRef }[] = [];
   failActions = false;
+  /** Attachment bytes by `${providerMessageId}:${providerAttachmentId}`. */
+  files = new Map<string, Uint8Array>();
+  fetched: string[] = [];
 
   async connect() {
     return { identities: [{ address: "me@example.com", displayName: "Me" }], displayName: "Example" };
@@ -28,6 +31,13 @@ export class FakeProvider implements MailProvider {
   /** Resend-style inbound fetch. */
   async fetchReceived(id: string) {
     return msg({ providerMessageId: `resend:${id}`, subject: "Inbound via Resend" });
+  }
+  async fetchAttachment(providerMessageId: string, providerAttachmentId: string): Promise<Uint8Array> {
+    const key = `${providerMessageId}:${providerAttachmentId}`;
+    this.fetched.push(key);
+    const f = this.files.get(key);
+    if (!f) throw new Error("no such attachment");
+    return f;
   }
   async applyAction(id: string, action: ProviderAction) {
     if (this.failActions) throw new Error("provider down");

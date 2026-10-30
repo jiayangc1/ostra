@@ -1,7 +1,9 @@
-import type { Category, MessageDetail, ThreadDetail, ThreadLabel, ThreadSummary, VirtualFolder } from "@ostra/core";
+import type { Category, EventPlacement, MessageDetail, ThreadDetail, ThreadLabel, ThreadSummary, VirtualFolder } from "@ostra/core";
 import { uniqueAddresses } from "@ostra/core";
 import {
   and,
+  calendarConnections,
+  calendarPlacements,
   desc,
   eq,
   inArray,
@@ -79,6 +81,7 @@ export async function summarize(db: Db, rows: ThreadRow[]): Promise<ThreadSummar
       sentAt: messages.sentAt,
       folder: messages.folder,
       hasAttachments: messages.hasAttachments,
+      extracted: messages.extracted,
     })
     .from(messages)
     .where(inArray(messages.threadId, ids))
@@ -124,6 +127,7 @@ export async function summarize(db: Db, rows: ThreadRow[]): Promise<ThreadSummar
     const incoming = ms.filter((m) => m.folder !== "sent" && m.folder !== "drafts");
     const latest = ms[ms.length - 1];
     const latestIncoming = incoming[incoming.length - 1] ?? latest;
+    const withCode = [...incoming].reverse().find((m) => m.extracted.code);
     return {
       id: t.id,
       subject: t.subject,
@@ -138,6 +142,8 @@ export async function summarize(db: Db, rows: ThreadRow[]): Promise<ThreadSummar
       labels: labelsByThread.get(t.id) ?? [],
       messageCount: ms.length,
       hasAttachments: ms.some((m) => m.hasAttachments),
+      code: withCode ? { value: withCode.extracted.code!, messageId: withCode.id, sentAt: withCode.sentAt.toISOString() } : null,
+      eventCount: ms.reduce((n, m) => n + (m.extracted.events?.length ?? 0), 0),
     };
   });
 }
@@ -158,12 +164,27 @@ export async function getThreadDetail(s: Services, userId: string, threadId: str
   const [summary] = await summarize(s.db, [row]);
   const msgs = await s.db.select().from(messages).where(eq(messages.threadId, threadId)).orderBy(messages.sentAt);
   const ids = msgs.map((m) => m.id);
-  const [accts, lbls] = ids.length
+  const [accts, lbls, placed] = ids.length
     ? await Promise.all([
         s.db.select().from(messageAccounts).where(inArray(messageAccounts.messageId, ids)),
         s.db.select().from(messageLabels).where(inArray(messageLabels.messageId, ids)),
+        s.db
+          .select({ p: calendarPlacements, calendars: calendarConnections.calendars })
+          .from(calendarPlacements)
+          .innerJoin(calendarConnections, eq(calendarConnections.id, calendarPlacements.connectionId))
+          .where(inArray(calendarPlacements.messageId, ids)),
       ])
-    : [[], []];
+    : [[], [], []];
+  const placementsFor = (messageId: string, index: number): EventPlacement[] =>
+    placed
+      .filter((r) => r.p.messageId === messageId && r.p.eventIndex === index)
+      .map((r) => ({
+        connectionId: r.p.connectionId,
+        calendarId: r.p.calendarId,
+        calendarName: r.calendars.find((c) => c.id === r.p.calendarId)?.name ?? null,
+        url: r.p.url,
+        addedAt: r.p.createdAt.toISOString(),
+      }));
   const details: MessageDetail[] = await Promise.all(
     msgs.map(async (m) => {
       const body = m.bodyRef ? await s.blobs.getJson<StoredBody>(m.bodyRef).catch(() => null) : null;
@@ -186,6 +207,8 @@ export async function getThreadDetail(s: Services, userId: string, threadId: str
         folder: m.folder,
         isRead: m.isRead,
         labels: lbls.filter((l) => l.messageId === m.id).map((l) => ({ labelId: l.labelId, source: l.source, confidence: l.confidence })),
+        code: m.extracted.code ?? null,
+        events: (m.extracted.events ?? []).map((e, index) => ({ ...e, index, added: placementsFor(m.id, index) })),
       };
     }),
   );

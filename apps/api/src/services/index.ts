@@ -13,6 +13,8 @@ import { OutlookProvider, type OutlookCredentials } from "@ostra/sync-outlook";
 import { ResendProvider, type ResendCredentials } from "@ostra/sync-resend";
 import { assertPublicHost } from "../lib/ssrf.ts";
 import { createAiService, noopAi } from "./ai.ts";
+import { defaultCalendarFactory, type CalDavCredentials, type CalendarFactory } from "./calendars.ts";
+import { DEMO_CALDAV_HOST, demoCalendar } from "../demo/calendar.ts";
 import { AnthropicProvider } from "@ostra/ai";
 import { PROVIDER_KINDS } from "@ostra/core";
 import { DemoProvider, isDemoCredentials } from "../demo/provider.ts";
@@ -27,6 +29,7 @@ export interface ServiceOverrides {
   /** "memory" for tests. */
   pgliteDir?: string;
   ai?: (s: Services) => Services["ai"];
+  calendars?: CalendarFactory;
 }
 
 export async function createServices(config: Config, o: ServiceOverrides = {}): Promise<Services> {
@@ -53,6 +56,7 @@ export async function createServices(config: Config, o: ServiceOverrides = {}): 
     hub,
     providers: withDemo(config, o.providers ?? defaultProviders(config)),
     ai: noopAi,
+    calendars: o.calendars ?? withDemoCalendar(config, defaultCalendarFactory(config)),
     log,
     verifyToken: o.verifyToken ?? (await createTokenVerifier(config)),
   };
@@ -113,4 +117,14 @@ export async function closeServices(s: Services) {
   await s.queue.close();
   await s.hub.close();
   await s.database.close();
+}
+
+/** In demo mode, CalDAV logins to demo.invalid get an in-memory calendar. */
+function withDemoCalendar(config: Config, real: CalendarFactory): CalendarFactory {
+  if (!config.demo) return real;
+  return (ctx) => {
+    const creds = ctx.credentials as Partial<CalDavCredentials>;
+    if (ctx.provider === "caldav" && creds.serverUrl && new URL(creds.serverUrl).hostname === DEMO_CALDAV_HOST) return demoCalendar(creds.username ?? "demo");
+    return real(ctx);
+  };
 }

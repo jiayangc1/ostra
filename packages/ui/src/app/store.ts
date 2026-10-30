@@ -1,4 +1,4 @@
-import type { Category, ThreadDetail, ThreadSummary, UserSettings, VirtualFolder } from "@ostra/core";
+import type { CalendarConnection, Category, EventPlacement, ThreadDetail, ThreadSummary, UserSettings, VirtualFolder } from "@ostra/core";
 import type { AxiosInstance } from "axios";
 import { createContext, useContext, useSyncExternalStore } from "react";
 import { ApiError } from "./api.ts";
@@ -32,6 +32,8 @@ export interface State {
   lists: Record<string, ListState>;
   details: Record<string, ThreadDetail>;
   connection: "connecting" | "online" | "offline";
+  /** Connected calendars; null until loaded. */
+  calendars: CalendarConnection[] | null;
 }
 
 const EMPTY_LIST: ListState = { ids: [], cursor: null, status: "idle", complete: false };
@@ -82,7 +84,7 @@ export interface StoreDeps {
 }
 
 export class MailStore {
-  private state: State = { boot: null, bootStatus: "loading", threads: {}, lists: {}, details: {}, connection: "connecting" };
+  private state: State = { boot: null, bootStatus: "loading", threads: {}, lists: {}, details: {}, connection: "connecting", calendars: null };
   private readonly listeners = new Set<() => void>();
   private persistTimer: ReturnType<typeof setTimeout> | null = null;
   private countsTimer: ReturnType<typeof setTimeout> | null = null;
@@ -121,7 +123,7 @@ export class MailStore {
 
   // ---------- cache ----------
   async hydrate() {
-    const cached = await this.deps.cache.get<Pick<State, "boot" | "threads" | "lists" | "details">>("state:v1");
+    const cached = await this.deps.cache.get<Pick<State, "boot" | "threads" | "lists" | "details">>("state:v2");
     if (cached && this.state.bootStatus === "loading") {
       this.set({
         boot: cached.boot,
@@ -137,16 +139,20 @@ export class MailStore {
 
   private schedulePersist() {
     if (this.persistTimer) return;
-    this.persistTimer = setTimeout(() => {
-      this.persistTimer = null;
-      const { boot, threads, lists, details } = this.state;
-      // Keep the cache bounded: first 200 rows of each list, 30 recent threads.
-      const keepLists = Object.fromEntries(Object.entries(lists).map(([k, l]) => [k, { ...l, ids: l.ids.slice(0, 200), cursor: l.ids.length > 200 ? null : l.cursor, complete: l.complete && l.ids.length <= 200 }]));
-      const keepIds = new Set(Object.values(keepLists).flatMap((l) => l.ids));
-      const keepThreads = Object.fromEntries(Object.entries(threads).filter(([id]) => keepIds.has(id)));
-      const keepDetails = Object.fromEntries(this.recentDetails.slice(-30).filter((id) => details[id]).map((id) => [id, details[id]!]));
-      void this.deps.cache.set("state:v1", { boot, threads: keepThreads, lists: keepLists, details: keepDetails });
-    }, 600);
+    this.persistTimer = setTimeout(() => void this.persistNow(), 600);
+  }
+
+  /** Write the cache now (after settings saves, so a quick reload can't restore stale settings). */
+  private persistNow(): Promise<void> {
+    if (this.persistTimer) clearTimeout(this.persistTimer);
+    this.persistTimer = null;
+    const { boot, threads, lists, details } = this.state;
+    // Keep the cache bounded: first 200 rows of each list, 30 recent threads.
+    const keepLists = Object.fromEntries(Object.entries(lists).map(([k, l]) => [k, { ...l, ids: l.ids.slice(0, 200), cursor: l.ids.length > 200 ? null : l.cursor, complete: l.complete && l.ids.length <= 200 }]));
+    const keepIds = new Set(Object.values(keepLists).flatMap((l) => l.ids));
+    const keepThreads = Object.fromEntries(Object.entries(threads).filter(([id]) => keepIds.has(id)));
+    const keepDetails = Object.fromEntries(this.recentDetails.slice(-30).filter((id) => details[id]).map((id) => [id, details[id]!]));
+    return this.deps.cache.set("state:v2", { boot, threads: keepThreads, lists: keepLists, details: keepDetails });
   }
 
   // ---------- bootstrap ----------
@@ -154,6 +160,9 @@ export class MailStore {
     try {
       const { data } = await this.deps.api.get<Bootstrap>("/bootstrap");
       this.set({ boot: data, bootStatus: "ready" });
+      // Times written in plain text ("dinner at 7") are read in the user's zone.
+      const zone = browserTimeZone();
+      if (zone && data.settings.timeZone !== zone) void this.updateSettings({ timeZone: zone }).catch(() => {});
     } catch (err) {
       if (!this.state.boot) this.set({ bootStatus: "error" });
       throw err;
@@ -178,6 +187,7 @@ export class MailStore {
     try {
       const { data } = await this.deps.api.patch<UserSettings>("/settings", patch);
       this.set((s) => (s.boot ? { boot: { ...s.boot, settings: data } } : {}));
+      await this.persistNow().catch(() => {});
     } catch (err) {
       if (prev) this.set((s) => (s.boot ? { boot: { ...s.boot, settings: prev } } : {}));
       throw err;
@@ -244,7 +254,11 @@ export class MailStore {
       if (detail) {
         // New message in a thread we have cached: drop it so the next open refetches.
         if (detail.messageCount !== t.messageCount) delete details[t.id];
-        else details[t.id] = { ...detail, ...t, messages: detail.messages };
+        else {
+          details[t.id] = { ...detail, ...t, messages: detail.messages };
+          // Events were found after it loaded: fetch them so an open thread shows the card.
+          if ((detail.eventCount ?? 0) !== t.eventCount) queueMicrotask(() => void this.loadThread(t.id).catch(() => {}));
+        }
       }
       return { ...placed, details };
     });
@@ -372,8 +386,83 @@ export class MailStore {
     }
   }
 
+  // ---------- codes and calendars ----------
+  async copyCode(value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      this.deps.notify(`Copied ${value}`);
+      return true;
+    } catch {
+      this.deps.notify("Couldn't reach the clipboard. Select the code and copy it instead.", { tone: "error" });
+      return false;
+    }
+  }
+
+  private calendarsLoading: Promise<CalendarConnection[]> | null = null;
+
+  /** One request at a time; callers that arrive meanwhile share it. */
+  loadCalendars(): Promise<CalendarConnection[]> {
+    this.calendarsLoading ??= this.deps.api
+      .get<CalendarConnection[]>("/calendars")
+      .then(({ data }) => {
+        this.set({ calendars: data });
+        return data;
+      })
+      .finally(() => {
+        this.calendarsLoading = null;
+      });
+    return this.calendarsLoading;
+  }
+
+  /** Add an event found in a message to a calendar (the default one when no target is given). */
+  async addEvent(threadId: string, messageId: string, index: number, target: { connectionId: string; calendarId: string } | null = null): Promise<EventPlacement | null> {
+    try {
+      const { data } = await this.deps.api.post<EventPlacement>(`/messages/${messageId}/events/${index}/add`, target ?? {});
+      this.set((s) => {
+        const d = s.details[threadId];
+        if (!d) return {};
+        const messages = d.messages.map((m) =>
+          m.id !== messageId
+            ? m
+            : {
+                ...m,
+                events: m.events.map((e) =>
+                  e.index !== index ? e : { ...e, added: [...e.added.filter((p) => !(p.connectionId === data.connectionId && p.calendarId === data.calendarId)), data] },
+                ),
+              },
+        );
+        return { details: { ...s.details, [threadId]: { ...d, messages } } };
+      });
+      const url = data.url;
+      this.deps.notify(`Added to ${data.calendarName ?? "your calendar"}`, url ? { action: { label: "Open", onClick: () => window.open(url, "_blank", "noopener") } } : {});
+      return data;
+    } catch (err) {
+      if (err instanceof ApiError && err.code === "calendar_reauth") void this.loadCalendars().catch(() => {});
+      this.deps.notify(err instanceof Error ? err.message : "Couldn't add the event.", { tone: "error" });
+      return null;
+    }
+  }
+
+  async downloadEvent(messageId: string, index: number): Promise<Blob | null> {
+    try {
+      const { data } = await this.deps.api.get<Blob>(`/messages/${messageId}/events/${index}/ics`, { responseType: "blob" });
+      return data;
+    } catch (err) {
+      this.deps.notify(err instanceof Error ? err.message : "Couldn't download the event.", { tone: "error" });
+      return null;
+    }
+  }
+
   async clearCache() {
     await this.deps.cache.clear();
+  }
+}
+
+function browserTimeZone(): string | null {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+  } catch {
+    return null;
   }
 }
 

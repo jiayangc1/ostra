@@ -1,5 +1,5 @@
-import { CATEGORIES, COLORS, LABEL_TEMPLATES, VIRTUAL_FOLDERS, type Label, type UserSettings } from "@ostra/core";
-import { accounts, and, eq, identities, inArray, labels, type LabelRow, type UserRow } from "@ostra/db";
+import { CATEGORIES, COLORS, LABEL_TEMPLATES, VIRTUAL_FOLDERS, isValidTimeZone, type Label, type UserSettings } from "@ostra/core";
+import { accounts, and, calendarConnections, eq, identities, inArray, labels, type LabelRow, type UserRow } from "@ostra/db";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { badRequest, notFound } from "../lib/errors.ts";
@@ -11,6 +11,7 @@ import { sendMessage } from "../services/send.ts";
 import { connectRoutes } from "./accounts-connect.ts";
 import { oauthStartRoutes } from "./oauth.ts";
 import { attachmentRoute } from "./attachments.ts";
+import { calendarRoutes, messageEventRoutes } from "./calendars.ts";
 import { devRoutes } from "../demo/routes.ts";
 import { composeRoutes } from "./compose.ts";
 import { folderCounts, getThreadDetail, listThreads } from "../services/threads.ts";
@@ -80,6 +81,9 @@ export function apiRoutes(s: Services) {
       autoLabel: z.boolean(),
       aiEnabled: z.boolean(),
       onboarded: z.boolean(),
+      timeZone: z.string().max(64).refine(isValidTimeZone, "unknown time zone").nullable(),
+      defaultCalendar: z.object({ connectionId: uuid, calendarId: z.string().min(1).max(1024) }).nullable(),
+      findEvents: z.boolean(),
     })
     .partial();
   api.patch("/settings", async (c) => {
@@ -92,6 +96,13 @@ export function apiRoutes(s: Services) {
         .innerJoin(accounts, eq(accounts.id, identities.accountId))
         .where(and(eq(identities.id, patch.defaultIdentityId), eq(accounts.userId, user.id)));
       if (!own) throw badRequest("Unknown identity");
+    }
+    if (patch.defaultCalendar) {
+      const [conn] = await s.db
+        .select({ id: calendarConnections.id })
+        .from(calendarConnections)
+        .where(and(eq(calendarConnections.id, patch.defaultCalendar.connectionId), eq(calendarConnections.userId, user.id)));
+      if (!conn) throw badRequest("Unknown calendar");
     }
     return c.json(await updateSettings(s.db, user.id, patch));
   });
@@ -249,6 +260,10 @@ export function apiRoutes(s: Services) {
   });
 
   api.get("/messages/:id/attachments/:index", attachmentRoute(s));
+
+  // ---- Calendars ----
+  api.route("/calendars", calendarRoutes(s));
+  api.route("/messages", messageEventRoutes(s));
 
   api.route("/", composeRoutes(s));
 

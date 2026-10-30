@@ -54,6 +54,17 @@ Every external dependency has a local stand-in, so `pnpm dev` works on a bare ma
 - **Pre-send check** runs on ⌘Enter. Wrong account and missing attachment are local rules; tone is a fast-model call that's skipped when AI isn't allowed. It never blocks: "Send anyway" is always one key away.
 - **The AI draft line** under the reader appears only for primary threads whose last message is incoming. It's cached per thread and latest message.
 
+## Codes and calendar events
+
+- **Verification codes are local rules, not a model.** They run on every incoming message at ingest, so they work with AI off and cost nothing. A code is accepted only when the message talks about verifying or signing in *and* the number sits next to that wording; order numbers, prices, years, phone numbers, links and promo codes are rejected. Codes in sent mail are ignored. The list and the "latest code" bar show a code for 15 minutes; the reader always shows it.
+- **Events come from two places.** `.ics` invites (attachments, or a `BEGIN:VCALENDAR` body) are parsed exactly, with Windows zone names mapped to IANA, cancellations and recurrence exceptions skipped. Plain-text plans go to the fast model only when AI is allowed for the user and the account, "Find events" is on, the thread isn't a newsletter or promotion, and a local pre-filter sees a date. Times without a zone are read in the user's zone, which the client reports from the browser.
+- **Scanning is its own job** (`events`, queued after `ai`), so a model failure retries just the scan with backoff. The write is conditional on the message not being scanned yet, so two workers can't overwrite each other.
+- **Calendar connections are separate from mail accounts.** People often want events on a different account than the mail came to, iCloud mail has no calendar API, and adding calendar scopes to mail sign-in would force every mail account to re-consent. Google asks for `calendar.events.owned` + `calendar.calendarlist.readonly` (add to owned calendars, list them: nothing reads existing events); Microsoft asks for `Calendars.ReadWrite`.
+- **Apple Calendar uses CalDAV with an app-specific password.** Apple has no OAuth for iCloud data. Discovery follows RFC 6764 (current-user-principal → calendar-home-set, which on iCloud lives on a `pNN-caldav.icloud.com` host). Any other CalDAV server works the same way. User-supplied CalDAV servers must be https and public; every request and redirect hop goes through the SSRF guard.
+- **Adding twice doesn't duplicate.** Each (message, event, calendar) gets a stable id: Google's event `id`, Graph's `transactionId`, the CalDAV file name with `If-None-Match: *`. Repeats in Graph are not carried over (its recurrence format isn't RRULE); Google and CalDAV keep them.
+- **No calendar needed to use an event:** every card can download a `.ics`.
+- **Demo mode** connects a CalDAV login to `demo.invalid` to an in-memory calendar, so the flow works offline.
+
 ## Security
 
 - Credentials and bodies are envelope-encrypted (AES-256-GCM, a fresh data key per record, rotatable master keys). The logger takes no message content and reduces errors to name + message.
