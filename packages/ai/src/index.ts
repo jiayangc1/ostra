@@ -1,1 +1,9 @@
-export {};
+export { AnthropicProvider, type AnthropicProviderOptions } from "./anthropic.ts";
+export { categorize, HEURISTIC_THRESHOLD, type CategoryResult } from "./categorize.ts";
+export { relevantCorrections, type Correction } from "./corrections.ts";
+export { heuristicCategory, type CategoryGuess, type MessageSignals } from "./heuristics.ts";
+export { autoLabel, LABEL_THRESHOLD, type AppliedLabel, type LabelDef } from "./label.ts";
+export { complete, untrusted, type LLMProvider, type Tier } from "./llm.ts";
+export { MockLLM } from "./mock.ts";
+export { localChecks, mentionsAttachment, preSendCheck, toneCheck, type PreSendInput, type PreSendWarning } from "./presend.ts";
+export { draftReply, rewrite, REWRITE_MODES, type RewriteMode, type ThreadForWriting, type WriterIdentity } from "./writing.ts";

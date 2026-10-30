@@ -12,7 +12,8 @@ import { GmailProvider, type GmailCredentials } from "@ostra/sync-gmail";
 import { OutlookProvider, type OutlookCredentials } from "@ostra/sync-outlook";
 import { ResendProvider, type ResendCredentials } from "@ostra/sync-resend";
 import { assertPublicHost } from "../lib/ssrf.ts";
-import { noopAi } from "./ai.ts";
+import { createAiService, noopAi } from "./ai.ts";
+import { AnthropicProvider } from "@ostra/ai";
 import { PROVIDER_KINDS } from "@ostra/core";
 import { DemoProvider, isDemoCredentials } from "../demo/provider.ts";
 import type { ProviderRegistry, Services } from "./context.ts";
@@ -55,7 +56,7 @@ export async function createServices(config: Config, o: ServiceOverrides = {}): 
     log,
     verifyToken: o.verifyToken ?? (await createTokenVerifier(config)),
   };
-  services.ai = o.ai ? o.ai(services) : noopAi;
+  services.ai = o.ai ? o.ai(services) : createAiService(services, config.anthropicApiKey ? new AnthropicProvider({ apiKey: config.anthropicApiKey }) : null);
   return services;
 }
 
