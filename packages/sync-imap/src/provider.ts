@@ -57,6 +57,7 @@ interface Cursor {
 
 /** Mailboxes we sync, one per unified folder. */
 const SYNCED: VirtualFolder[] = ["inbox", "sent", "drafts", "spam", "trash", "archive"];
+const FILING_SPECIAL_USE = new Set(["\\Inbox", "\\Sent", "\\Drafts", "\\Junk", "\\Trash", "\\Archive"]);
 /** Most recent messages fetched per mailbox on first sync. */
 export const INITIAL_LIMIT = 300;
 const WINDOW = 1000;
@@ -79,8 +80,9 @@ export function chooseMailboxes(list: Pick<ListResponse, "path" | "specialUse" |
   const chosen = new Map<VirtualFolder, { path: string; special: boolean }>();
   for (const box of list) {
     if (box.flags?.has("\\Noselect") || box.flags?.has("\\NonExistent")) continue;
-    // Gmail's "All Mail" duplicates every other folder.
-    if (box.specialUse === "\\All") continue;
+    // Gmail's "All Mail" duplicates every other folder, and \\Flagged / \\Important
+    // are views (Starred, Important), not places mail can be filed.
+    if (box.specialUse && !FILING_SPECIAL_USE.has(box.specialUse)) continue;
     const folder = imapMailboxToFolder(box);
     if (!SYNCED.includes(folder)) continue;
     const special = !!box.specialUse || box.path.toUpperCase() === "INBOX";
@@ -374,10 +376,13 @@ export class ImapProvider implements MailProvider {
   }
 
   private async destination(client: ImapFlow, folder: VirtualFolder): Promise<string> {
-    const boxes = chooseMailboxes(await client.list());
-    const found = boxes.get(folder);
+    const list = await client.list();
+    const found = chooseMailboxes(list).get(folder);
     if (found) return found;
     if (folder === "archive") {
+      // Gmail archives by moving to All Mail, which drops the Inbox label.
+      const all = list.find((b) => b.specialUse === "\\All");
+      if (all) return all.path;
       await client.mailboxCreate("Archive");
       return "Archive";
     }
