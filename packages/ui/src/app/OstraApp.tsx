@@ -7,6 +7,7 @@ import { Button } from "../components/Button.tsx";
 import { useTheme } from "../theme.tsx";
 import { Shell, type ShellExtensions } from "../shell/Shell.tsx";
 import { SettingsPage } from "../settings/SettingsPage.tsx";
+import { Onboarding } from "../onboarding/Onboarding.tsx";
 import { createApi } from "./api.ts";
 import { useAuthState } from "./auth.tsx";
 import type { CacheFactory } from "./cache.ts";
@@ -108,7 +109,7 @@ function Gate({ routes, shell, ShellFrame, openExternal }: OstraAppProps) {
   if (bootStatus === "error") {
     return <EmptyState className="h-full" title="Couldn't reach Ostra" description="Check your connection and try again." action={<Button onClick={() => location.pathname && window.location.reload()}>Try again</Button>} />;
   }
-  if (settings && !settings.onboarded && !location.pathname.startsWith("/onboarding") && !location.pathname.startsWith("/settings") && routes) {
+  if (settings && !settings.onboarded && !location.pathname.startsWith("/onboarding") && !location.pathname.startsWith("/settings")) {
     return <Navigate to="/onboarding" replace />;
   }
 
@@ -117,6 +118,7 @@ function Gate({ routes, shell, ShellFrame, openExternal }: OstraAppProps) {
     <Routes>
       {routes}
       <Route path="/settings/:section?" element={<SettingsPage openExternal={openExternal} />} />
+      <Route path="/onboarding" element={<Onboarding openExternal={openExternal} />} />
       <Route path="/" element={<Navigate to="/inbox" replace />} />
       <Route path="/label/:labelId/:threadId?" element={ShellFrame ? <ShellFrame>{shellEl}</ShellFrame> : shellEl} />
       <Route path="/:folder/:threadId?" element={ShellFrame ? <ShellFrame>{shellEl}</ShellFrame> : shellEl} />
