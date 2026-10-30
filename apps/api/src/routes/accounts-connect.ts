@@ -84,6 +84,23 @@ export function connectRoutes(s: Services) {
     return c.json({ ...account, webhookUrl: await resendWebhookUrl(s, account.id) }, 201);
   });
 
+  /** Reconnect an IMAP account after a password change: verified before it's saved. */
+  r.put("/imap/:id/password", async (c) => {
+    const account = await getAccount(s, c.get("user").id, c.req.param("id"));
+    if (account.provider !== "imap") throw badRequest("Not an IMAP account");
+    const body = z.object({ password: z.string().min(1).max(1024) }).safeParse(await c.req.json().catch(() => null));
+    if (!body.success) throw badRequest("Enter the new password", "invalid_body");
+    const creds = s.envelope.decryptJson<{ imap: { pass: string }; smtp: { pass: string } } & Record<string, unknown>>(account.encryptedCredentials);
+    // Most hosts share one password for IMAP and SMTP; update both when they matched.
+    const next = { ...creds, imap: { ...creds.imap, pass: body.data.password }, smtp: { ...creds.smtp, pass: creds.smtp.pass === creds.imap.pass ? body.data.password : creds.smtp.pass } };
+    await verify(s, "imap", next);
+    await s.db.update(accounts).set({ encryptedCredentials: s.envelope.encryptJson(next), status: "active", statusMessage: null }).where(eq(accounts.id, account.id));
+    await s.queue.add("sync", { accountId: account.id, mode: account.syncCursor ? "incremental" : "initial" }, { jobId: `${account.id}:reconnect` });
+    const [row] = await s.db.select().from(accounts).where(eq(accounts.id, account.id));
+    s.hub.publish(row!.userId, { type: "account.update", account: toAccountDto(row!) });
+    return c.json(toAccountDto(row!));
+  });
+
   /** The inbound webhook URL to paste into Resend, and whether its secret is saved. */
   r.get("/resend/:id/webhook", async (c) => {
     const account = await getAccount(s, c.get("user").id, c.req.param("id"));

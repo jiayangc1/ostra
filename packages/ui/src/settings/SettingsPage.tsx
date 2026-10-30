@@ -96,6 +96,10 @@ function AccountsSection({ openExternal }: { openExternal?: ((url: string) => vo
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<Account | null>(null);
   const [webhookFor, setWebhookFor] = useState<{ id: string; url: string } | null>(null);
+  const [passwordFor, setPasswordFor] = useState<Account | null>(null);
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordBusy, setPasswordBusy] = useState(false);
   const accounts = boot?.accounts ?? [];
 
   // Returning from OAuth.
@@ -122,10 +126,28 @@ function AccountsSection({ openExternal }: { openExternal?: ((url: string) => vo
     if (a.provider === "gmail" || a.provider === "outlook") {
       const { data } = await store.api.post<{ url: string }>(`/accounts/oauth/${a.provider}/start`, { reconnectAccountId: a.id, returnTo: "/settings/accounts" });
       (openExternal ?? ((u: string) => window.location.assign(u)))(data.url);
+    } else if (a.provider === "imap") {
+      setPassword("");
+      setPasswordError(null);
+      setPasswordFor(a);
     } else {
-      store.notify("Remove the account and connect it again with the new password.");
+      store.notify("Check the API key in Resend, then remove and connect this domain again.");
     }
   };
+
+  // From the inbox banner: start reconnecting right away.
+  const reconnectId = search.get("reconnect");
+  useEffect(() => {
+    if (!reconnectId) return;
+    const a = accounts.find((x) => x.id === reconnectId);
+    if (!a) return;
+    const t = setTimeout(() => {
+      setSearch({}, { replace: true });
+      void reconnect(a);
+    }, 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reconnectId, accounts.length]);
 
   const showWebhook = async (a: Account) => {
     const { data } = await store.api.get<{ url: string }>(`/accounts/connect/resend/${a.id}/webhook`);
@@ -194,6 +216,37 @@ function AccountsSection({ openExternal }: { openExternal?: ((url: string) => vo
           </li>
         ))}
       </ul>
+      <Dialog open={!!passwordFor} onClose={() => setPasswordFor(null)} label="Reconnect account" className="p-6">
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setPasswordBusy(true);
+            setPasswordError(null);
+            try {
+              await store.api.put(`/accounts/connect/imap/${passwordFor!.id}/password`, { password });
+              setPasswordFor(null);
+              await store.loadBootstrap();
+              store.notify("Reconnected. Syncing now.");
+            } catch (err) {
+              setPasswordError(err instanceof Error ? err.message : "Couldn't reconnect.");
+            } finally {
+              setPasswordBusy(false);
+            }
+          }}
+        >
+          <h2 className="text-base">Reconnect {passwordFor?.displayName}</h2>
+          <Input label="New password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} error={passwordError ?? undefined} description="Ostra checks it with your mail server before saving." />
+          <div className="flex justify-end gap-2">
+            <Button variant="tertiary" onClick={() => setPasswordFor(null)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" loading={passwordBusy}>
+              Reconnect
+            </Button>
+          </div>
+        </form>
+      </Dialog>
       <Dialog open={!!removing} onClose={() => setRemoving(null)} label="Remove account" className="flex flex-col gap-4 p-6">
         <h2 className="text-base">Remove {removing?.displayName}?</h2>
         <p className="text-[13px] text-fg-2">Ostra stops syncing it and deletes the mail it stored from this account. Nothing changes in the mailbox itself.</p>
