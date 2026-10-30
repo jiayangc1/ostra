@@ -1,8 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { useMailStore, useStore } from "../app/store.ts";
 import type { ComposeRequest } from "../shell/Shell.tsx";
 import { AiDraftLine } from "./AiDraftLine.tsx";
-import { Composer } from "./Composer.tsx";
+const Composer = lazy(() => import("./Composer.tsx").then((m) => ({ default: m.Composer })));
 import { draftFor } from "./model.ts";
 
 /** Owns the open composer; hands `compose` and the AI draft line to the shell. */
@@ -28,7 +28,11 @@ export function ComposerHost({ children }: { children: (api: { compose: (r: Comp
   return (
     <>
       {children({ compose, readerFooter })}
-      {open && initial && <Composer key={open.key} mode={open.mode} initial={initial} threadId={open.threadId} onClose={() => setOpen(null)} />}
+      {open && initial && (
+        <Suspense fallback={null}>
+          <Composer key={open.key} mode={open.mode} initial={initial} threadId={open.threadId} onClose={() => setOpen(null)} />
+        </Suspense>
+      )}
     </>
   );
 }

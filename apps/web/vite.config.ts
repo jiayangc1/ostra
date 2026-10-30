@@ -22,8 +22,21 @@ export default defineConfig(({ mode }) => ({
       "/ws": { target: API.replace(/^http/, "ws"), ws: true },
     },
   },
+  // `vite preview` (e2e) proxies to the API like the dev server does.
+  preview: {
+    proxy: {
+      "/api": { target: API, changeOrigin: true },
+      "/ws": { target: API.replace(/^http/, "ws"), ws: true },
+    },
+  },
   build: {
     target: "es2022",
     sourcemap: mode !== "desktop",
+    rollupOptions: {
+      output: {
+        // Framework code changes rarely; keep it in its own long-cached chunk.
+        manualChunks: { react: ["react", "react-dom", "react-router"] },
+      },
+    },
   },
 }));

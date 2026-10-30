@@ -1,16 +1,21 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { ListSkeleton, useAuthState } from "@ostra/ui";
-import { ClerkAuth } from "./auth/ClerkAuth.tsx";
 import { DevAuth } from "./auth/DevAuth.tsx";
+
+// Clerk is the largest dependency; it loads only when a key is configured.
+const ClerkAuth = lazy(() => import("./auth/ClerkAuth.tsx").then((m) => ({ default: m.ClerkAuth })));
 
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 
 /** Chooses Clerk or local dev auth, then renders the matched route. */
 export function Root() {
   return CLERK_KEY ? (
-    <ClerkAuth publishableKey={CLERK_KEY}>
-      <Outlet />
-    </ClerkAuth>
+    <Suspense fallback={<div className="h-full bg-canvas" aria-busy="true" />}>
+      <ClerkAuth publishableKey={CLERK_KEY}>
+        <Outlet />
+      </ClerkAuth>
+    </Suspense>
   ) : (
     <DevAuth>
       <Outlet />

@@ -32,14 +32,15 @@ export default defineConfig({
       port: API_PORT,
       reuseExistingServer: false,
       env: { OSTRA_DEMO: "true", PORT: String(API_PORT), OSTRA_DATA_DIR: dataDir, LOG_LEVEL: "error", OSTRA_INLINE_WORKERS: "true" },
-      timeout: 60_000,
+      timeout: 120_000,
     },
     {
-      command: `pnpm exec vite --port ${WEB_PORT} --strictPort`,
+      // A production build: no dependency re-optimization reloads mid-test, and it's what ships.
+      command: `pnpm exec vite build --logLevel error && pnpm exec vite preview --port ${WEB_PORT} --strictPort`,
       port: WEB_PORT,
       reuseExistingServer: false,
       env: { OSTRA_API_URL: `http://localhost:${API_PORT}` },
-      timeout: 60_000,
+      timeout: 120_000,
     },
   ],
 });

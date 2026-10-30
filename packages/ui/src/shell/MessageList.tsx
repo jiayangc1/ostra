@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef } from "react";
 import type { Account, Color, Label, ThreadSummary } from "@ostra/core";
 import { displayName } from "@ostra/core";
 import { Bell, ChevronRight, Newspaper, Paperclip, Tag } from "lucide-react";
@@ -26,6 +26,12 @@ interface Props {
 export function MessageList({ rows, threads, accounts, labels, cursor, openId, onActivate, onEndReached }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const sentinel = useRef<HTMLDivElement>(null);
+  // A stable click handler, so memoized rows don't all re-render when one thread changes.
+  const latest = useRef(onActivate);
+  useEffect(() => {
+    latest.current = onActivate;
+  });
+  const activate = useCallback((i: number) => latest.current(i), []);
 
   // Keep the keyboard cursor in view.
   useEffect(() => {
@@ -45,7 +51,7 @@ export function MessageList({ rows, threads, accounts, labels, cursor, openId, o
     <div ref={ref} role="listbox" aria-label="Messages" className="min-h-0 flex-1 overflow-y-auto" tabIndex={-1}>
       {rows.map((row, i) =>
         row.kind === "bundle" ? (
-          <BundleRow key={`b:${row.category}`} index={i} row={row} active={i === cursor} onClick={() => onActivate(i)} />
+          <BundleRow key={`b:${row.category}`} index={i} row={row} active={i === cursor} onActivate={activate} />
         ) : (
           <ThreadRow
             key={`t:${row.id}`}
@@ -56,7 +62,7 @@ export function MessageList({ rows, threads, accounts, labels, cursor, openId, o
             selected={row.id === openId}
             accounts={accounts}
             labels={labels}
-            onClick={() => onActivate(i)}
+            onActivate={activate}
           />
         ),
       )}
@@ -73,7 +79,7 @@ const ThreadRow = memo(function ThreadRow({
   selected,
   accounts,
   labels,
-  onClick,
+  onActivate,
 }: {
   thread: ThreadSummary;
   index: number;
@@ -82,7 +88,7 @@ const ThreadRow = memo(function ThreadRow({
   selected: boolean;
   accounts: Map<string, Account>;
   labels: Map<string, Label>;
-  onClick: () => void;
+  onActivate: (index: number) => void;
 }) {
   const colors = t.accountIds.map((id) => accounts.get(id)?.color).filter((c): c is Color => !!c);
   const names = t.accountIds.map((id) => accounts.get(id)?.displayName ?? "");
@@ -94,7 +100,7 @@ const ThreadRow = memo(function ThreadRow({
       active={active}
       selected={selected}
       unread={!t.isRead}
-      onClick={onClick}
+      onClick={() => onActivate(index)}
       className={cn(nested && "bg-surface pl-7")}
       leading={
         <span className="mt-[7px] flex w-3 shrink-0 justify-center">
@@ -133,7 +139,7 @@ const ThreadRow = memo(function ThreadRow({
   );
 });
 
-function BundleRow({ row, index, active, onClick }: { row: Extract<Row, { kind: "bundle" }>; index: number; active: boolean; onClick: () => void }) {
+const BundleRow = memo(function BundleRow({ row, index, active, onActivate }: { row: Extract<Row, { kind: "bundle" }>; index: number; active: boolean; onActivate: (index: number) => void }) {
   const Icon = BUNDLE_ICON[row.category];
   return (
     <ListRow
@@ -141,7 +147,7 @@ function BundleRow({ row, index, active, onClick }: { row: Extract<Row, { kind: 
       data-bundle={row.category}
       aria-expanded={row.expanded}
       active={active}
-      onClick={onClick}
+      onClick={() => onActivate(index)}
       className="py-2"
       leading={<Icon size={13} className="mt-[3px] w-3 shrink-0 text-fg-3" aria-hidden="true" />}
       trailing={
@@ -159,4 +165,4 @@ function BundleRow({ row, index, active, onClick }: { row: Extract<Row, { kind: 
       </span>
     </ListRow>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
 import { useToast } from "../components/Toast.tsx";
 import { ListSkeleton } from "../components/Skeleton.tsx";
@@ -6,8 +6,9 @@ import { EmptyState } from "../components/EmptyState.tsx";
 import { Button } from "../components/Button.tsx";
 import { useTheme } from "../theme.tsx";
 import { Shell, type ShellExtensions } from "../shell/Shell.tsx";
-import { SettingsPage } from "../settings/SettingsPage.tsx";
-import { Onboarding } from "../onboarding/Onboarding.tsx";
+// Screens visited rarely load on demand.
+const SettingsPage = lazy(() => import("../settings/SettingsPage.tsx").then((m) => ({ default: m.SettingsPage })));
+const Onboarding = lazy(() => import("../onboarding/Onboarding.tsx").then((m) => ({ default: m.Onboarding })));
 import { ComposerHost } from "../compose/ComposerHost.tsx";
 import { createApi, streamText } from "./api.ts";
 import { useAuthState } from "./auth.tsx";
@@ -119,8 +120,8 @@ function Gate({ routes, shell, ShellFrame, openExternal }: OstraAppProps) {
   return (
     <Routes>
       {routes}
-      <Route path="/settings/:section?" element={<SettingsPage openExternal={openExternal} />} />
-      <Route path="/onboarding" element={<Onboarding openExternal={openExternal} />} />
+      <Route path="/settings/:section?" element={<Suspense fallback={null}><SettingsPage openExternal={openExternal} /></Suspense>} />
+      <Route path="/onboarding" element={<Suspense fallback={null}><Onboarding openExternal={openExternal} /></Suspense>} />
       <Route path="/" element={<Navigate to="/inbox" replace />} />
       <Route path="/label/:labelId/:threadId?" element={ShellFrame ? <ShellFrame>{shellEl}</ShellFrame> : shellEl} />
       <Route path="/:folder/:threadId?" element={ShellFrame ? <ShellFrame>{shellEl}</ShellFrame> : shellEl} />
