@@ -15,10 +15,12 @@ import { useHotkeys } from "../app/hotkeys.ts";
 import { useMailStore, useStore } from "../app/store.ts";
 import { ColorPicker, nextColor } from "./ColorPicker.tsx";
 import { ConnectAccount, ResendWebhookStep } from "./ConnectAccount.tsx";
+import { CalendarsSection } from "./CalendarsSection.tsx";
 
 const SECTIONS = [
   { id: "accounts", name: "Accounts" },
   { id: "labels", name: "Labels" },
+  { id: "calendars", name: "Calendars" },
   { id: "preferences", name: "Preferences" },
 ] as const;
 
@@ -68,6 +70,7 @@ export function SettingsPage({ openExternal }: { openExternal?: (url: string) =>
         <div className="mx-auto flex max-w-2xl flex-col gap-8 px-6 py-10">
           {section === "accounts" && <AccountsSection openExternal={openExternal} />}
           {section === "labels" && <LabelsSection />}
+          {section === "calendars" && <CalendarsSection openExternal={openExternal} header={(title, description, action) => <Header title={title} description={description} action={action} />} />}
           {section === "preferences" && <PreferencesSection />}
         </div>
       </main>

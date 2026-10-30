@@ -1,5 +1,5 @@
-import { LABEL_TEMPLATES, type Category, type Color, type NormalizedMessage, type ProviderKind, type VirtualFolder } from "@ostra/core";
-import { accounts, and, eq, labels, messageLabels, messages, threads } from "@ostra/db";
+import { LABEL_TEMPLATES, type Category, type Color, type ExtractedEvent, type NormalizedMessage, type ProviderKind, type VirtualFolder } from "@ostra/core";
+import { accounts, and, eq, labels, messageLabels, messages, sql, threads } from "@ostra/db";
 import { createAccount, disconnectAccount } from "../services/accounts.ts";
 import type { Services } from "../services/context.ts";
 import { ingestBatch } from "../services/ingest.ts";
@@ -34,11 +34,56 @@ interface Seed {
   history?: { from: [string, string] | "me"; body: string; ago: number }[];
   attachments?: { filename: string; contentType: string; size: number }[];
   html?: string;
+  /** Events as the scanner would have found them: days from today, local start time, minutes long (0 = all day). */
+  events?: { title: string; /** 0 = Sunday … 6 = Saturday: the next one after today. */ weekday: number; at?: string; minutes?: number; location?: string; source: "ics" | "text" }[];
+}
+
+function demoEvent(e: NonNullable<Seed["events"]>[number], now: number): ExtractedEvent {
+  const d = new Date(now);
+  d.setDate(d.getDate() + ((e.weekday - d.getDay() + 7) % 7 || 7));
+  const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const base = { title: e.title, location: e.location ?? null, description: null, url: null, uid: null, organizer: null, rrule: null, source: e.source, timeZone: null };
+  if (!e.at || !e.minutes) {
+    const end = new Date(d);
+    end.setDate(end.getDate() + 1);
+    return { ...base, allDay: true, start: date, end: `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}` };
+  }
+  const [h, m] = e.at.split(":").map(Number) as [number, number];
+  d.setHours(h, m, 0, 0);
+  return { ...base, allDay: false, start: d.toISOString(), end: new Date(d.getTime() + e.minutes * 60_000).toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
 }
 
 const unsub = (domain: string) => ({ "list-unsubscribe": `<https://${domain}/unsubscribe>`, "list-id": `<news.${domain}>`, precedence: "bulk" });
 
 const SEEDS: Seed[] = [
+  {
+    in: ["personal"],
+    from: ["Google", "no-reply@accounts.google.com"],
+    subject: "G-482913 is your Google verification code",
+    body: "Hi Sam,\n\nWe received a request to sign in to your Google Account.\n\n482913\n\nIf you didn't request this code, someone may be trying to access your account. Don't share it with anyone.",
+    ago: 1,
+    category: "notification",
+    headers: { "auto-submitted": "auto-generated" },
+  },
+  {
+    in: ["personal"],
+    from: ["Maya Chen", "maya.chen@gmail.com"],
+    subject: "dinner thursday?",
+    body: "Hey! Want to do dinner Thursday at 7 at Uchi? I already booked a table for two. Should be done by 8:30.\n\nMaya",
+    ago: 42,
+    category: "primary",
+    events: [{ title: "Dinner with Maya at Uchi", weekday: 4, at: "19:00", minutes: 90, location: "Uchi, 904 Westheimer Rd", source: "text" }],
+  },
+  {
+    in: ["work"],
+    from: ["Lena Park", "lena@northwind.io"],
+    subject: "Invitation: Design review @ Tue 10am",
+    body: "Lena Park has invited you to Design review.\n\nWalkthrough of the new onboarding flow. Bring questions.\n\nJoin: Juniper room or the video link in the invite.",
+    ago: 75,
+    category: "primary",
+    attachments: [{ filename: "invite.ics", contentType: "text/calendar", size: 1834 }],
+    events: [{ title: "Design review", weekday: 2, at: "10:00", minutes: 45, location: "Juniper", source: "ics" }],
+  },
   {
     in: ["startup"],
     from: ["Priya Natarajan", "priya@foundry.vc"],
@@ -367,7 +412,7 @@ export async function seedDemo(s: Services, userId: string, opts: { labels?: boo
   const now = Date.now();
   let n = 0;
   const all = [...SEEDS, ...SENT];
-  const assigned: { rfc: string; category: Category; labels: string[] }[] = [];
+  const assigned: { rfc: string; category: Category; labels: string[]; events: ExtractedEvent[] }[] = [];
   for (const seed of all) {
     for (const key of seed.in) {
       const acct = ACCOUNTS.find((a) => a.key === key)!;
@@ -403,7 +448,7 @@ export async function seedDemo(s: Services, userId: string, opts: { labels?: boo
         refs.push(rfc);
       });
       await ingestBatch(s, row, { messages: batch, updates: [], deleted: [] });
-      assigned.push({ rfc: refs[refs.length - 1]!, category: seed.category, labels: seed.labels ?? [] });
+      assigned.push({ rfc: refs[refs.length - 1]!, category: seed.category, labels: seed.labels ?? [], events: (seed.events ?? []).map((e) => demoEvent(e, now)) });
     }
   }
 
@@ -421,6 +466,7 @@ export async function seedDemo(s: Services, userId: string, opts: { labels?: boo
     const [m] = await s.db.select({ id: messages.id, threadId: messages.threadId }).from(messages).where(and(eq(messages.userId, userId), eq(messages.rfcMessageId, a.rfc)));
     if (!m) continue;
     await s.db.update(threads).set({ category: a.category, categorySource: "heuristic", categoryConfidence: 0.9, aiPending: false }).where(eq(threads.id, m.threadId));
+    if (a.events.length) await s.db.update(messages).set({ extracted: sql`${messages.extracted} || ${JSON.stringify({ events: a.events, eventsScanned: true })}::jsonb` }).where(eq(messages.id, m.id));
     const ids = labelRows.filter((l) => a.labels.includes(l.name)).map((l) => l.id);
     if (ids.length) await s.db.insert(messageLabels).values(ids.map((labelId) => ({ messageId: m.id, labelId, source: "ai" as const, confidence: 0.86 }))).onConflictDoNothing();
   }

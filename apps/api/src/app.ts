@@ -17,6 +17,7 @@ import { clerkWebhook } from "./webhooks/clerk.ts";
 import { gmailWebhook, graphWebhook } from "./webhooks/push.ts";
 import { resendWebhook } from "./webhooks/resend.ts";
 import { oauthCallbackRoutes } from "./routes/oauth.ts";
+import { calendarCallbackRoutes } from "./routes/calendars.ts";
 import { publicRoutes } from "./routes/public.ts";
 
 const clientIp = (c: { req: { header(n: string): string | undefined } }) =>
@@ -60,6 +61,7 @@ export function createApp(s: Services, opts: { staticDir?: string | undefined; e
   app.route("/webhooks/gmail", gmailWebhook(s));
   app.route("/webhooks/graph", graphWebhook(s));
   app.route("/webhooks/resend", resendWebhook(s));
+  app.route("/oauth/calendar", calendarCallbackRoutes(s));
   app.route("/oauth", oauthCallbackRoutes(s));
   app.route("/public", publicRoutes(s));
   opts.extraRoutes?.(app);

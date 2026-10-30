@@ -7,3 +7,4 @@ export { complete, untrusted, type LLMProvider, type Tier } from "./llm.ts";
 export { MockLLM } from "./mock.ts";
 export { localChecks, mentionsAttachment, preSendCheck, toneCheck, type PreSendInput, type PreSendWarning } from "./presend.ts";
 export { draftReply, rewrite, REWRITE_MODES, type RewriteMode, type ThreadForWriting, type WriterIdentity } from "./writing.ts";
+export { EVENT_THRESHOLD, extractEvents, mightContainEvent, type EventScanInput } from "./events.ts";

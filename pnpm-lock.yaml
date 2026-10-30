@@ -56,6 +56,9 @@ importers:
       '@ostra/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@ostra/calendar':
+        specifier: workspace:*
+        version: link:../../packages/calendar
       '@ostra/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -187,6 +190,12 @@ importers:
       zod:
         specifier: ^4.6.7
         version: 4.6.7
+
+  packages/calendar:
+    dependencies:
+      '@ostra/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/core:
     dependencies:

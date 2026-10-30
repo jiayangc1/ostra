@@ -1,4 +1,4 @@
-import type { Address, AttachmentMeta, Category, Color, ProviderKind, UserSettings, VirtualFolder } from "@ostra/core";
+import type { Address, AttachmentMeta, CalendarInfo, CalendarProviderKind, Category, Color, ExtractedEvent, ProviderKind, UserSettings, VirtualFolder } from "@ostra/core";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -99,6 +99,13 @@ export const threads = pgTable(
   ],
 );
 
+export interface MessageExtracted {
+  code?: string | null;
+  events?: ExtractedEvent[];
+  /** Event scanning ran (so the worker doesn't scan again). */
+  eventsScanned?: boolean;
+}
+
 export const messages = pgTable(
   "messages",
   {
@@ -132,6 +139,8 @@ export const messages = pgTable(
     hasAttachments: boolean("has_attachments").notNull().default(false),
     attachments: jsonb("attachments").$type<AttachmentMeta[]>().notNull().default([]),
     headers: jsonb("headers").$type<Record<string, string>>().notNull().default({}),
+    /** What was pulled out of the message: a one-time code, calendar events. */
+    extracted: jsonb("extracted").$type<MessageExtracted>().notNull().default({}),
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull(),
     folder: text("folder").$type<VirtualFolder>().notNull().default("inbox"),
     isRead: boolean("is_read").notNull().default(false),
@@ -248,12 +257,54 @@ export const contactsLastIdentity = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.contactAddress] })],
 );
 
+/** A calendar account the user connected to add events to. Separate from mail accounts. */
+export const calendarConnections = pgTable(
+  "calendar_connections",
+  {
+    id: id(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    provider: text("provider").$type<CalendarProviderKind>().notNull(),
+    /** Signed-in address or Apple ID. */
+    account: text("account").notNull(),
+    /** Envelope-encrypted JSON (OAuth tokens, or CalDAV URL + app password). Never logged. */
+    encryptedCredentials: text("encrypted_credentials").notNull(),
+    status: text("status").$type<"active" | "needs_reauth" | "error">().notNull().default("active"),
+    statusMessage: text("status_message"),
+    /** Last known list of writable calendars. */
+    calendars: jsonb("calendars").$type<CalendarInfo[]>().notNull().default([]),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("calendar_connections_user_account_idx").on(t.userId, t.provider, sql`lower(${t.account})`)],
+);
+
+/** Events from a message that were added to a calendar (so the card says "Added"). */
+export const calendarPlacements = pgTable(
+  "calendar_placements",
+  {
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => messages.id, { onDelete: "cascade" }),
+    eventIndex: integer("event_index").notNull(),
+    connectionId: uuid("connection_id")
+      .notNull()
+      .references(() => calendarConnections.id, { onDelete: "cascade" }),
+    calendarId: text("calendar_id").notNull(),
+    providerEventId: text("provider_event_id").notNull(),
+    url: text("url"),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.messageId, t.eventIndex, t.connectionId, t.calendarId] })],
+);
+
 export type UserRow = typeof users.$inferSelect;
 export type AccountRow = typeof accounts.$inferSelect;
 export type IdentityRow = typeof identities.$inferSelect;
 export type ThreadRow = typeof threads.$inferSelect;
 export type MessageRow = typeof messages.$inferSelect;
 export type LabelRow = typeof labels.$inferSelect;
+export type CalendarConnectionRow = typeof calendarConnections.$inferSelect;
 
 /** Marketing-site waitlist. Public, so only an address and where it came from. */
 export const waitlist = pgTable("waitlist", {

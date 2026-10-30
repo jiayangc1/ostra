@@ -2,6 +2,7 @@ import { accounts, eq, inArray, threads, and } from "@ostra/db";
 import type { Handlers } from "./lib/queue.ts";
 import { providerFor, purgeUser } from "./services/accounts.ts";
 import type { Services } from "./services/context.ts";
+import { scanEvents } from "./services/extract.ts";
 import { runSync, startPush } from "./services/sync.ts";
 
 export function jobHandlers(s: Services): Handlers {
@@ -11,6 +12,11 @@ export function jobHandlers(s: Services): Handlers {
     },
     ai: async ({ userId, messageIds }) => {
       await s.ai.processMessages(userId, messageIds);
+      // After categorizing, so newsletters and promotions are skipped. Its own job, so a failure retries only the scan.
+      await s.queue.add("events", { userId, messageIds });
+    },
+    events: async ({ userId, messageIds }) => {
+      await scanEvents(s, userId, messageIds);
     },
     action: async ({ accountId, providerMessageId, action }) => {
       const [acct] = await s.db.select().from(accounts).where(eq(accounts.id, accountId));

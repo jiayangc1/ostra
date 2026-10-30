@@ -1,13 +1,14 @@
 import { memo, useCallback, useEffect, useRef } from "react";
 import type { Account, Color, Label, ThreadSummary } from "@ostra/core";
 import { displayName } from "@ostra/core";
-import { Bell, ChevronRight, Newspaper, Paperclip, Tag } from "lucide-react";
+import { Bell, CalendarDays, ChevronRight, Newspaper, Paperclip, Tag } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
 import { DotStack } from "../components/Dot.tsx";
 import { ListRow } from "../components/ListRow.tsx";
 import { cn } from "../lib/cn.ts";
 import { CATEGORY_NAMES, relativeTime } from "../app/format.ts";
 import type { Row } from "./rows.ts";
+import { CodeChip, isFreshCode, useMinuteClock } from "./Extracted.tsx";
 
 const BUNDLE_ICON = { newsletter: Newspaper, notification: Bell, promotion: Tag } as const;
 
@@ -21,9 +22,11 @@ interface Props {
   onActivate: (index: number) => void;
   onHover?: (index: number) => void;
   onEndReached: () => void;
+  onCopyCode: (value: string) => Promise<boolean>;
 }
 
-export function MessageList({ rows, threads, accounts, labels, cursor, openId, onActivate, onEndReached }: Props) {
+export function MessageList({ rows, threads, accounts, labels, cursor, openId, onActivate, onEndReached, onCopyCode }: Props) {
+  const now = useMinuteClock();
   const ref = useRef<HTMLDivElement>(null);
   const sentinel = useRef<HTMLDivElement>(null);
   // A stable click handler, so memoized rows don't all re-render when one thread changes.
@@ -63,6 +66,8 @@ export function MessageList({ rows, threads, accounts, labels, cursor, openId, o
             accounts={accounts}
             labels={labels}
             onActivate={activate}
+            freshCode={isFreshCode(threads[row.id]!.code, now) ? threads[row.id]!.code!.value : null}
+            onCopyCode={onCopyCode}
           />
         ),
       )}
@@ -80,6 +85,8 @@ const ThreadRow = memo(function ThreadRow({
   accounts,
   labels,
   onActivate,
+  freshCode,
+  onCopyCode,
 }: {
   thread: ThreadSummary;
   index: number;
@@ -89,6 +96,8 @@ const ThreadRow = memo(function ThreadRow({
   accounts: Map<string, Account>;
   labels: Map<string, Label>;
   onActivate: (index: number) => void;
+  freshCode: string | null;
+  onCopyCode: (value: string) => Promise<boolean>;
 }) {
   const colors = t.accountIds.map((id) => accounts.get(id)?.color).filter((c): c is Color => !!c);
   const names = t.accountIds.map((id) => accounts.get(id)?.displayName ?? "");
@@ -114,13 +123,15 @@ const ThreadRow = memo(function ThreadRow({
           {t.messageCount > 1 && <span className="ml-1.5 font-mono text-[11px] font-normal text-fg-3">{t.messageCount}</span>}
         </span>
         <span className="ml-auto flex shrink-0 items-center gap-1.5 font-mono text-[11px] text-fg-3">
+          {t.eventCount > 0 && <CalendarDays size={11} aria-label="Has a calendar event" className="text-fg-2" />}
           {t.hasAttachments && <Paperclip size={11} aria-label="Has attachments" />}
           <time dateTime={t.lastMessageAt}>{relativeTime(t.lastMessageAt)}</time>
         </span>
       </div>
       <div className="flex min-w-0 items-center gap-1.5">
         {!t.isRead && <span className="sr-only">Unread.</span>}
-        <span className={cn("truncate text-[13px]", t.isRead ? "text-fg-3" : "text-fg-2")}>{t.subject || "(no subject)"}</span>
+        <span className={cn("min-w-0 truncate text-[13px]", t.isRead ? "text-fg-3" : "text-fg-2")}>{t.subject || "(no subject)"}</span>
+        {freshCode && <CodeChip value={freshCode} onCopy={onCopyCode} size="sm" className="ml-auto" />}
       </div>
       {t.labels.length > 0 && (
         <div className="mt-1 flex flex-wrap gap-1">

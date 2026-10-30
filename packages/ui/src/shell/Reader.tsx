@@ -12,6 +12,7 @@ import { Tooltip } from "../components/Tooltip.tsx";
 import { cn } from "../lib/cn.ts";
 import { CATEGORY_NAMES, formatBytes, fullTime } from "../app/format.ts";
 import { HtmlBody, TextBody } from "./EmailBody.tsx";
+import { CodeChip, CodeHint, EventCard, type EventActions } from "./Extracted.tsx";
 import { OstraMark } from "../brand/logo.tsx";
 
 interface Props {
@@ -29,9 +30,13 @@ interface Props {
   onRetry: () => void;
   /** The one-line AI draft and its accept handler; rendered by the composer milestone. */
   footer?: ReactNode;
+  onCopyCode: (value: string) => Promise<boolean>;
+  events: EventActions;
+  /** The viewer's IANA zone, for "7:00 PM ET there" hints. */
+  timeZone?: string | undefined;
 }
 
-export function Reader({ summary, detail, error, accounts, labels, onDownload, onAction, onReply, onLabel, onCategory, onBack, onRetry, footer }: Props) {
+export function Reader({ summary, detail, error, accounts, labels, onDownload, onAction, onReply, onLabel, onCategory, onBack, onRetry, footer, onCopyCode, events, timeZone }: Props) {
   if (!summary) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -130,6 +135,9 @@ export function Reader({ summary, detail, error, accounts, labels, onDownload, o
               defaultOpen={i === messages.length - 1 || !m.isRead}
               accounts={accounts}
               onDownload={onDownload}
+              onCopyCode={onCopyCode}
+              events={events}
+              timeZone={timeZone}
             />
           ))}
         </div>
@@ -149,7 +157,23 @@ function ToolbarButton({ label, shortcut, onClick, children }: { label: string; 
   );
 }
 
-function MessageView({ message: m, defaultOpen, accounts, onDownload }: { message: MessageDetail; defaultOpen: boolean; accounts: Map<string, Account>; onDownload: Props["onDownload"] }) {
+function MessageView({
+  message: m,
+  defaultOpen,
+  accounts,
+  onDownload,
+  onCopyCode,
+  events,
+  timeZone,
+}: {
+  message: MessageDetail;
+  defaultOpen: boolean;
+  accounts: Map<string, Account>;
+  onDownload: Props["onDownload"];
+  onCopyCode: Props["onCopyCode"];
+  events: EventActions;
+  timeZone: string | undefined;
+}) {
   const [open, setOpen] = useState(defaultOpen);
   const account = m.accountIds.map((id) => accounts.get(id)).find(Boolean);
   const files = m.attachments.map((a, i) => ({ ...a, index: i })).filter((a) => !a.inline);
@@ -184,6 +208,15 @@ function MessageView({ message: m, defaultOpen, accounts, onDownload }: { messag
           </time>
         </div>
       </div>
+      {m.code && (
+        <div className="flex flex-wrap items-center gap-3">
+          <CodeChip value={m.code} onCopy={onCopyCode} />
+          <CodeHint />
+        </div>
+      )}
+      {m.events.map((e) => (
+        <EventCard key={e.index} messageId={m.id} event={e} actions={events} viewerZone={timeZone} />
+      ))}
       {m.bodyHtml ? <HtmlBody html={m.bodyHtml} /> : <TextBody text={m.bodyText ?? m.snippet} />}
       {files.length > 0 && (
         <ul className="flex flex-wrap gap-2" aria-label="Attachments">

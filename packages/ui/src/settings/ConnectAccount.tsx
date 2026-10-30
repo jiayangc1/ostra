@@ -306,7 +306,7 @@ export function ResendWebhookStep({ accountId, url, onDone }: { accountId: strin
   );
 }
 
-function GoogleMark() {
+export function GoogleMark() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
       <path fill="currentColor" d="M21.35 11.1H12v2.98h5.35c-.23 1.43-1.64 4.2-5.35 4.2-3.22 0-5.85-2.67-5.85-5.96S8.78 6.36 12 6.36c1.83 0 3.06.78 3.76 1.45l2.57-2.47C16.68 3.8 14.53 2.8 12 2.8 6.92 2.8 2.8 6.92 2.8 12s4.12 9.2 9.2 9.2c5.31 0 8.83-3.73 8.83-8.99 0-.6-.07-1.06-.15-1.51z" />
@@ -314,7 +314,7 @@ function GoogleMark() {
   );
 }
 
-function MicrosoftMark() {
+export function MicrosoftMark() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
       <path d="M2 2h9.5v9.5H2zM12.5 2H22v9.5h-9.5zM2 12.5h9.5V22H2zM12.5 12.5H22V22h-9.5z" />

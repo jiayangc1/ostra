@@ -17,6 +17,7 @@
     "@hono/node-server": "^2.1.5",
     "@hono/node-ws": "^1.3.1",
     "@ostra/ai": "workspace:*",
+    "@ostra/calendar": "workspace:*",
     "@ostra/core": "workspace:*",
     "@ostra/db": "workspace:*",
     "@ostra/sync-gmail": "workspace:*",

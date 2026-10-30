@@ -19,6 +19,8 @@ const thread: ThreadSummary = {
   labels: [],
   messageCount: 1,
   hasAttachments: false,
+  code: null,
+  eventCount: 0,
 };
 
 function makeStore(post: () => Promise<unknown>) {

@@ -22,6 +22,8 @@ const m: MessageDetail = {
   folder: "inbox",
   isRead: true,
   labels: [],
+  code: null,
+  events: [],
 };
 
 test("reply goes to the sender, keeps one Re:, and quotes the original", () => {

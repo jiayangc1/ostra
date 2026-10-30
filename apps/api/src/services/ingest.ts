@@ -1,4 +1,5 @@
 import {
+  detectVerificationCode,
   dedupeKey,
   makeSnippet,
   htmlToText,
@@ -100,6 +101,8 @@ export async function ingestMessage(s: Services, account: AccountRow, m: Normali
   }
 
   const text = m.bodyText ?? (m.bodyHtml ? htmlToText(m.bodyHtml) : null);
+  // Local rules only, so it works with AI off. Only mail you received can carry your code.
+  const code = INCOMING.has(m.folder) ? detectVerificationCode({ subject: m.subject, text }) : null;
   const [row] = await db
     .insert(messages)
     .values({
@@ -122,6 +125,7 @@ export async function ingestMessage(s: Services, account: AccountRow, m: Normali
       hasAttachments: m.attachments.some((a) => !a.inline),
       attachments: m.attachments,
       headers: m.headers,
+      extracted: code ? { code } : {},
       sentAt: new Date(m.sentAt),
       folder: m.folder,
       isRead: m.isRead,
