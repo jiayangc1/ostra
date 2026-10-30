@@ -41,6 +41,10 @@ export interface Subscription {
   close(): Promise<void>;
 }
 
+export interface ActionResult {
+  providerMessageId?: string | undefined;
+}
+
 export interface SendResult {
   providerMessageId: string;
   rfcMessageId: string;
@@ -62,7 +66,8 @@ export interface MailProvider {
    */
   subscribe(onChange: () => void): Promise<Subscription>;
   send(message: OutgoingMessage, identity: IdentityRef): Promise<SendResult>;
-  applyAction(providerMessageId: string, action: ProviderAction): Promise<void>;
+  /** Returns the message's new provider id when the action changes it (IMAP moves change the UID). */
+  applyAction(providerMessageId: string, action: ProviderAction): Promise<ActionResult | void>;
   /** Fetch an attachment's bytes on demand. */
   fetchAttachment?(providerMessageId: string, providerAttachmentId: string): Promise<Uint8Array>;
   close?(): Promise<void>;

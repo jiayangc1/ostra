@@ -108,7 +108,15 @@ export async function applyThreadAction(s: Services, userId: string, threadId: s
     acctRows.map(async (acct) => {
       const provider = providerFor(s, acct);
       try {
-        for (const item of byAccount.get(acct.id)!) await provider.applyAction(item.providerMessageId, item.action);
+        for (const item of byAccount.get(acct.id)!) {
+          const r = await provider.applyAction(item.providerMessageId, item.action);
+          if (r?.providerMessageId && r.providerMessageId !== item.providerMessageId) {
+            await s.db
+              .update(messageAccounts)
+              .set({ providerMessageId: r.providerMessageId })
+              .where(and(eq(messageAccounts.accountId, acct.id), eq(messageAccounts.providerMessageId, item.providerMessageId)));
+          }
+        }
       } finally {
         await provider.close?.().catch(() => {});
       }

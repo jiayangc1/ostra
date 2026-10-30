@@ -20,6 +20,8 @@ export interface Config {
   anthropicApiKey: string | undefined;
   /** Run sync workers in the API process (single-process dev / small deploys). */
   inlineWorkers: boolean;
+  /** Let users point IMAP/SMTP at private addresses (self-hosted, Proton Bridge). Off by default: SSRF. */
+  allowPrivateMailHosts: boolean;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -70,5 +72,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         : null,
     anthropicApiKey: env.ANTHROPIC_API_KEY || undefined,
     inlineWorkers: env.OSTRA_INLINE_WORKERS !== "false",
+    allowPrivateMailHosts: env.ALLOW_PRIVATE_MAIL_HOSTS === "true",
   };
 }

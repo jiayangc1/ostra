@@ -1,0 +1,26 @@
+From: "Doe, Jane" <jane@fund.vc>
+To: Founder <hello@acme.dev>
+Cc: partner@fund.vc
+Subject: Re: Seed round deck
+Date: Wed, 07 Oct 2026 14:30:00 -0700
+Message-ID: <reply-1@fund.vc>
+In-Reply-To: <deck-1@acme.dev>
+References: <intro-0@fund.vc> <deck-1@acme.dev>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="mix"
+
+--mix
+Content-Type: text/plain; charset=utf-8
+
+Thanks, comments attached. Can we talk Thursday?
+
+> On Tue, you wrote:
+> Here's the deck.
+
+--mix
+Content-Type: application/pdf; name="deck-notes.pdf"
+Content-Disposition: attachment; filename="deck-notes.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKJcfsj6IKMSAwIG9iago8PC9UeXBlL0NhdGFsb2c+PgplbmRvYmoK
+--mix--

@@ -71,7 +71,9 @@ export async function ingestMessage(s: Services, account: AccountRow, m: Normali
       .insert(messageAccounts)
       .values({ messageId: existing.id, accountId: account.id, providerMessageId: m.providerMessageId, folder: m.folder })
       .onConflictDoUpdate({ target: [messageAccounts.messageId, messageAccounts.accountId], set: { providerMessageId: m.providerMessageId, folder: m.folder } });
-    const folder = moreVisible(existing.folder, m.folder);
+    // The message's folder is the most visible folder across every account holding it.
+    const links = await db.select({ folder: messageAccounts.folder }).from(messageAccounts).where(eq(messageAccounts.messageId, existing.id));
+    const folder = links.reduce<VirtualFolder>((f, l) => moreVisible(f, l.folder), links[0]?.folder ?? m.folder);
     const isRead = existing.isRead || m.isRead;
     if (folder !== existing.folder || isRead !== existing.isRead) {
       await db.update(messages).set({ folder, isRead }).where(eq(messages.id, existing.id));
@@ -150,7 +152,10 @@ async function applyUpdate(s: Services, account: AccountRow, u: FlagUpdate, resu
   if (u.folder) await s.db.update(messageAccounts).set({ folder: u.folder }).where(and(eq(messageAccounts.messageId, link.messageId), eq(messageAccounts.accountId, account.id)));
   const patch: { isRead?: boolean; folder?: VirtualFolder } = {};
   if (u.isRead !== undefined) patch.isRead = u.isRead;
-  if (u.folder) patch.folder = u.folder;
+  if (u.folder) {
+    const links = await s.db.select({ folder: messageAccounts.folder }).from(messageAccounts).where(eq(messageAccounts.messageId, link.messageId));
+    patch.folder = links.reduce<VirtualFolder>((f, l) => moreVisible(f, l.folder), u.folder);
+  }
   if (Object.keys(patch).length === 0) return;
   const [m] = await s.db.update(messages).set(patch).where(eq(messages.id, link.messageId)).returning({ threadId: messages.threadId });
   if (m) result.touchedThreads.add(m.threadId);

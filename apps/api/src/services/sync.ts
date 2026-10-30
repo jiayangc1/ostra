@@ -29,6 +29,7 @@ export async function runSync(s: Services, accountId: string, mode: "initial" | 
       if (!batch.hasMore) {
         await setAccountStatus(s, account, "active", null, { lastSyncedAt: new Date(), syncCursor: cursor });
         s.hub.publish(account.userId, { type: "sync.done", accountId: account.id, added });
+        if (!live.has(accountId)) void startPush(s, accountId);
         return;
       }
     }

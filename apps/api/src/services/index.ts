@@ -7,6 +7,8 @@ import { Envelope } from "../lib/crypto.ts";
 import { log } from "../lib/log.ts";
 import { MemoryQueue, createBullQueue, type JobQueue } from "../lib/queue.ts";
 import { RealtimeHub } from "../lib/realtime.ts";
+import { ImapProvider, type ImapCredentials } from "@ostra/sync-imap";
+import { assertPublicHost } from "../lib/ssrf.ts";
 import { noopAi } from "./ai.ts";
 import type { ProviderRegistry, Services } from "./context.ts";
 
@@ -43,7 +45,7 @@ export async function createServices(config: Config, o: ServiceOverrides = {}): 
     blobs: new EncryptedBlobStore(store, envelope),
     queue,
     hub,
-    providers: o.providers ?? (await defaultProviders()),
+    providers: o.providers ?? defaultProviders(config),
     ai: noopAi,
     log,
     verifyToken: o.verifyToken ?? (await createTokenVerifier(config)),
@@ -52,9 +54,15 @@ export async function createServices(config: Config, o: ServiceOverrides = {}): 
   return services;
 }
 
-/** Provider packages register themselves here as they land. */
-async function defaultProviders(): Promise<ProviderRegistry> {
-  return {};
+function defaultProviders(config: Config): ProviderRegistry {
+  const checkHost = (host: string) => assertPublicHost(host, { allowPrivate: config.allowPrivateMailHosts });
+  return {
+    imap: (ctx) =>
+      new ImapProvider(ctx.credentials as ImapCredentials, {
+        checkHost,
+        log: (m, e) => log.warn(m, { accountId: ctx.account.id }, e),
+      }),
+  };
 }
 
 export async function closeServices(s: Services) {

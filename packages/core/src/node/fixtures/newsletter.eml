@@ -1,0 +1,25 @@
+Return-Path: <bounce@mail.weekly.dev>
+Delivered-To: me@acme.dev
+From: "Weekly Dev" <hello@weekly.dev>
+To: me@acme.dev
+Subject: =?UTF-8?Q?Issue_42:_Edge_functions_=E2=9A=A1?=
+Date: Tue, 06 Oct 2026 09:00:00 +0000
+Message-ID: <Issue42.ABC@mail.weekly.dev>
+List-Unsubscribe: <https://weekly.dev/u/abc>, <mailto:unsub@weekly.dev>
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+List-Id: Weekly Dev <weekly.dev>
+Precedence: bulk
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="b1"
+
+--b1
+Content-Type: text/plain; charset=utf-8
+
+This week: edge functions,
+cold starts, and more.
+
+--b1
+Content-Type: text/html; charset=utf-8
+
+<html><body><h1>This week</h1><p>Edge functions, cold starts, and more.</p></body></html>
+--b1--

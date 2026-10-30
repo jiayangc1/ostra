@@ -7,6 +7,9 @@ import { THREAD_ACTIONS, applyThreadAction, changeCategory, setThreadLabel } fro
 import { disconnectAccount, getAccount, toAccountDto } from "../services/accounts.ts";
 import type { Services } from "../services/context.ts";
 import { stopPush } from "../services/sync.ts";
+import { sendMessage } from "../services/send.ts";
+import { connectRoutes } from "./accounts-connect.ts";
+import { attachmentRoute } from "./attachments.ts";
 import { folderCounts, getThreadDetail, listThreads } from "../services/threads.ts";
 import { settingsOf, updateSettings, upsertUserByClerkId } from "../services/users.ts";
 
@@ -187,6 +190,8 @@ export function apiRoutes(s: Services) {
   });
 
   // ---- Accounts ----
+  api.route("/accounts/connect", connectRoutes(s));
+
   api.get("/accounts", async (c) => {
     const rows = await s.db.select().from(accounts).where(eq(accounts.userId, c.get("user").id)).orderBy(accounts.createdAt);
     return c.json(rows.map(toAccountDto));
@@ -215,6 +220,31 @@ export function apiRoutes(s: Services) {
     await disconnectAccount(s, acct);
     return c.body(null, 204);
   });
+
+  // ---- Send ----
+  const addr = z.object({ name: z.string().max(200).optional(), address: z.string().trim().email() });
+  api.post("/send", async (c) => {
+    const body = await parse(
+      c,
+      z.object({
+        identityId: uuid,
+        to: z.array(addr).max(100).default([]),
+        cc: z.array(addr).max(100).default([]),
+        bcc: z.array(addr).max(100).default([]),
+        subject: z.string().max(998).default(""),
+        bodyText: z.string().max(2_000_000),
+        bodyHtml: z.string().max(5_000_000).optional(),
+        replyToMessageId: uuid.nullable().optional(),
+        attachments: z
+          .array(z.object({ filename: z.string().min(1).max(255), contentType: z.string().max(255), content: z.string().max(35_000_000) }))
+          .max(20)
+          .optional(),
+      }),
+    );
+    return c.json(await sendMessage(s, c.get("user").id, body), 201);
+  });
+
+  api.get("/messages/:id/attachments/:index", attachmentRoute(s));
 
   return api;
 }

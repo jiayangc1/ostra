@@ -11,6 +11,8 @@
     "test": "node --import tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
-    "@ostra/core": "workspace:*"
+    "@ostra/core": "workspace:*",
+    "imapflow": "^2.10.0",
+    "nodemailer": "^10.3.1"
   }
 }

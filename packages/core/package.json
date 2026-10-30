@@ -4,10 +4,19 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./mime": "./src/node/mime.ts",
+    "./compose": "./src/node/compose.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "node --import tsx --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "mailparser": "^3.14.1",
+    "nodemailer": "^10.3.1"
+  },
+  "devDependencies": {
+    "@types/mailparser": "^3.9.0"
   }
 }

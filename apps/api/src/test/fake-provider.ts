@@ -22,7 +22,8 @@ export class FakeProvider implements MailProvider {
   }
   async send(message: OutgoingMessage, identity: IdentityRef) {
     this.sent.push({ message, identity });
-    return { providerMessageId: `sent-${this.sent.length}`, rfcMessageId: `sent-${this.sent.length}@test` };
+    const id = `${this.sent.length}-${Math.random().toString(36).slice(2)}`;
+    return { providerMessageId: `sent-${id}`, rfcMessageId: `sent-${id}@test` };
   }
   async applyAction(id: string, action: ProviderAction) {
     if (this.failActions) throw new Error("provider down");
