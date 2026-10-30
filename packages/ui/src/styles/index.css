@@ -1,0 +1,286 @@
+/*
+ * Ostra design tokens: Vercel Geist, dark-first.
+ * Color only carries meaning (account dots, label badges, warnings).
+ * Import this once from the app entry; Tailwind scans the whole ui package.
+ */
+@import "tailwindcss";
+@source "../";
+
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
+@font-face {
+  font-family: "Geist";
+  src: url("../../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------- Theme values ---------- */
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --o-canvas: #000000;
+  --o-surface: #0a0a0a;
+  --o-hover: #111111;
+  --o-active: #1a1a1a;
+  --o-line: #1f1f1f;
+  --o-line-hover: #2e2e2e;
+  --o-line-strong: #454545;
+  --o-fg: #ededed;
+  --o-fg-2: #a1a1a1;
+  --o-fg-3: #878787;
+  --o-primary-bg: #ededed;
+  --o-primary-fg: #0a0a0a;
+  --o-primary-hover: #ffffff;
+  --o-focus: #52a8ff;
+  --o-overlay: rgb(0 0 0 / 0.6);
+
+  --o-blue-bg: #0a1a33;
+  --o-blue: #52a8ff;
+  --o-purple-bg: #1f0f33;
+  --o-purple: #bf7af0;
+  --o-amber-bg: #2a1a00;
+  --o-amber: #ffb224;
+  --o-green-bg: #0b2611;
+  --o-green: #62c073;
+  --o-pink-bg: #2e0a1c;
+  --o-pink: #f75f8f;
+  --o-teal-bg: #062621;
+  --o-teal: #0ac7b4;
+  --o-gray-bg: #1a1a1a;
+  --o-gray: #a1a1a1;
+  --o-red-bg: #300c0c;
+  --o-red: #ff6166;
+
+  --o-shadow-menu: 0 0 0 1px var(--o-line), 0 4px 8px -2px rgb(0 0 0 / 0.5), 0 16px 32px -8px rgb(0 0 0 / 0.6);
+  --o-shadow-window: 0 0 0 1px var(--o-line-hover), 0 8px 16px -4px rgb(0 0 0 / 0.5), 0 32px 64px -16px rgb(0 0 0 / 0.7);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --o-canvas: #ffffff;
+  --o-surface: #fafafa;
+  --o-hover: #f5f5f5;
+  --o-active: #ebebeb;
+  --o-line: #eaeaea;
+  --o-line-hover: #d4d4d4;
+  --o-line-strong: #a8a8a8;
+  --o-fg: #171717;
+  --o-fg-2: #666666;
+  --o-fg-3: #8f8f8f;
+  --o-primary-bg: #171717;
+  --o-primary-fg: #ffffff;
+  --o-primary-hover: #383838;
+  --o-focus: #0070f3;
+  --o-overlay: rgb(0 0 0 / 0.2);
+
+  --o-blue-bg: #e9f4ff;
+  --o-blue: #0068d6;
+  --o-purple-bg: #f9f0ff;
+  --o-purple: #7820bc;
+  --o-amber-bg: #fff6e5;
+  --o-amber: #aa4d00;
+  --o-green-bg: #ebfaeb;
+  --o-green: #297c3b;
+  --o-pink-bg: #ffe8f0;
+  --o-pink: #c41562;
+  --o-teal-bg: #e6fbf8;
+  --o-teal: #067a6e;
+  --o-gray-bg: #f2f2f2;
+  --o-gray: #666666;
+  --o-red-bg: #ffebeb;
+  --o-red: #da2f35;
+
+  --o-shadow-menu: 0 0 0 1px var(--o-line), 0 4px 8px -2px rgb(0 0 0 / 0.06), 0 16px 32px -8px rgb(0 0 0 / 0.12);
+  --o-shadow-window: 0 0 0 1px var(--o-line), 0 8px 16px -4px rgb(0 0 0 / 0.08), 0 32px 64px -16px rgb(0 0 0 / 0.16);
+}
+
+/* ---------- Tailwind theme ---------- */
+
+@theme inline {
+  --color-canvas: var(--o-canvas);
+  --color-surface: var(--o-surface);
+  --color-hover: var(--o-hover);
+  --color-active: var(--o-active);
+  --color-line: var(--o-line);
+  --color-line-hover: var(--o-line-hover);
+  --color-line-strong: var(--o-line-strong);
+  --color-fg: var(--o-fg);
+  --color-fg-2: var(--o-fg-2);
+  --color-fg-3: var(--o-fg-3);
+  --color-primary: var(--o-primary-bg);
+  --color-primary-fg: var(--o-primary-fg);
+  --color-primary-hover: var(--o-primary-hover);
+  --color-focus: var(--o-focus);
+  --color-overlay: var(--o-overlay);
+
+  --color-blue: var(--o-blue);
+  --color-blue-bg: var(--o-blue-bg);
+  --color-purple: var(--o-purple);
+  --color-purple-bg: var(--o-purple-bg);
+  --color-amber: var(--o-amber);
+  --color-amber-bg: var(--o-amber-bg);
+  --color-green: var(--o-green);
+  --color-green-bg: var(--o-green-bg);
+  --color-pink: var(--o-pink);
+  --color-pink-bg: var(--o-pink-bg);
+  --color-teal: var(--o-teal);
+  --color-teal-bg: var(--o-teal-bg);
+  --color-gray: var(--o-gray);
+  --color-gray-bg: var(--o-gray-bg);
+  --color-red: var(--o-red);
+  --color-red-bg: var(--o-red-bg);
+
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --radius-window: 12px;
+
+  --shadow-menu: var(--o-shadow-menu);
+  --shadow-window: var(--o-shadow-window);
+
+  /* Motion: one small system, used everywhere. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.32, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --animate-fade-in: o-fade-in var(--motion-normal) var(--ease-out) both;
+  --animate-pop-in: o-pop-in var(--motion-normal) var(--ease-spring) both;
+  --animate-slide-up: o-slide-up var(--motion-normal) var(--ease-out) both;
+  --animate-slide-down: o-slide-down var(--motion-fast) var(--ease-out) both;
+  --animate-shimmer: o-shimmer 1.4s linear infinite;
+}
+
+:root {
+  --motion-instant: 80ms;
+  --motion-fast: 140ms;
+  --motion-normal: 200ms;
+  --motion-slow: 320ms;
+}
+
+@keyframes o-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes o-pop-in {
+  from { opacity: 0; transform: translateY(4px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes o-slide-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes o-slide-down {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes o-dot {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-1px); }
+}
+
+@keyframes o-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* ---------- Base ---------- */
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background: var(--o-canvas);
+    color: var(--o-fg);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "liga", "calt";
+  }
+
+  h1, h2, h3, h4 {
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--o-focus) 35%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--o-focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Rows and inputs draw their own inset focus ring. */
+  [data-focus-inset]:focus-visible {
+    outline-offset: -2px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--o-line-hover) transparent;
+  }
+}
+
+@layer components {
+  /* Physical feedback shared by every pressable control. */
+  .o-press {
+    transition:
+      transform var(--motion-fast) var(--ease-spring),
+      background-color var(--motion-fast) var(--ease-out),
+      border-color var(--motion-fast) var(--ease-out),
+      color var(--motion-fast) var(--ease-out),
+      box-shadow var(--motion-fast) var(--ease-out),
+      opacity var(--motion-fast) var(--ease-out);
+  }
+  .o-press:active:not(:disabled) {
+    transform: scale(0.97);
+    transition-duration: var(--motion-instant);
+  }
+
+  .o-skeleton {
+    background: linear-gradient(90deg, var(--o-hover) 25%, var(--o-active) 37%, var(--o-hover) 63%);
+    background-size: 400% 100%;
+    animation: var(--animate-shimmer);
+    border-radius: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .o-press:active:not(:disabled) {
+    transform: none;
+  }
+}

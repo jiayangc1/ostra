@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="icon" type="image/svg+xml" href="./ostra-icon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./ostra-icon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./ostra-icon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./ostra-icon-180.png" />
+    <title>Ostra</title>
+    <script>
+      // Apply the stored theme before first paint to avoid a flash.
+      try {
+        var t = localStorage.getItem("ostra:theme");
+        if (t === "system") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
