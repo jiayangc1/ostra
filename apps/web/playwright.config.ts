@@ -31,7 +31,7 @@ export default defineConfig({
       cwd: "../api",
       port: API_PORT,
       reuseExistingServer: false,
-      env: { OSTRA_DEMO: "true", PORT: String(API_PORT), OSTRA_DATA_DIR: dataDir, LOG_LEVEL: "error", OSTRA_INLINE_WORKERS: "true" },
+      env: { CLERK_SECRET_KEY: "", OSTRA_DEMO: "true", PORT: String(API_PORT), OSTRA_DATA_DIR: dataDir, LOG_LEVEL: "error", OSTRA_INLINE_WORKERS: "true" },
       timeout: 120_000,
     },
     {
@@ -39,7 +39,8 @@ export default defineConfig({
       command: `pnpm exec vite build --logLevel error && pnpm exec vite preview --port ${WEB_PORT} --strictPort`,
       port: WEB_PORT,
       reuseExistingServer: false,
-      env: { OSTRA_API_URL: `http://localhost:${API_PORT}` },
+      // Blank keys beat the repo .env files, so e2e always uses the development sign-in.
+      env: { OSTRA_API_URL: `http://localhost:${API_PORT}`, VITE_CLERK_PUBLISHABLE_KEY: "", CLERK_PUBLISHABLE_KEY: "" },
       timeout: 120_000,
     },
   ],

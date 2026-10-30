@@ -1,11 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { fileURLToPath } from "node:url";
 
 const API = process.env.OSTRA_API_URL ?? "http://localhost:8787";
 
 export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
+  // One set of env files at the repo root for the API and the app. `clerk env pull` writes the
+  // publishable key without the VITE_ prefix; it's public by design, the secret key never matches.
+  envDir: fileURLToPath(new URL("../..", import.meta.url)),
+  envPrefix: ["VITE_", "CLERK_PUBLISHABLE_KEY"],
   // The desktop build talks to the hosted API unless told otherwise.
   define:
     mode === "desktop" && !process.env.VITE_API_URL

@@ -6,7 +6,7 @@ import { DevAuth } from "./auth/DevAuth.tsx";
 // Clerk is the largest dependency; it loads only when a key is configured.
 const ClerkAuth = lazy(() => import("./auth/ClerkAuth.tsx").then((m) => ({ default: m.ClerkAuth })));
 
-const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
+const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || import.meta.env.CLERK_PUBLISHABLE_KEY || undefined;
 
 /** Chooses Clerk or local dev auth, then renders the matched route. */
 export function Root() {

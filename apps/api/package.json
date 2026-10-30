@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "OSTRA_DEMO=${OSTRA_DEMO:-true} tsx watch --clear-screen=false src/main.ts",
-    "start": "tsx src/main.ts",
-    "worker": "tsx src/worker-main.ts",
-    "seed": "tsx src/seed-cli.ts",
+    "dev": "OSTRA_DEMO=${OSTRA_DEMO:-true} tsx watch --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local --clear-screen=false src/main.ts",
+    "start": "tsx --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local src/main.ts",
+    "worker": "tsx --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local src/worker-main.ts",
+    "seed": "tsx --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local src/seed-cli.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "NODE_ENV=test node --import tsx --test --test-concurrency=1 \"src/**/*.test.ts\""
   },

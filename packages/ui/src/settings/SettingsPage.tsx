@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import type { Account, Color, Label } from "@ostra/core";
-import { ArrowLeft, RefreshCw, Trash2, User } from "lucide-react";
+import { ArrowLeft, LogOut, RefreshCw, Trash2, User } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { Dialog } from "../components/Dialog.tsx";
@@ -26,6 +26,7 @@ export function SettingsPage({ openExternal }: { openExternal?: (url: string) =>
   const { section = "accounts" } = useParams();
   const navigate = useNavigate();
   const auth = useAuthState();
+  const store = useMailStore();
   useHotkeys([{ keys: "escape", run: () => navigate("/inbox") }]);
 
   useEffect(() => {
@@ -54,6 +55,13 @@ export function SettingsPage({ openExternal }: { openExternal?: (url: string) =>
               <User size={13} /> Your Ostra account
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => void store.clearCache().then(() => auth.signOut())}
+            className="o-press flex h-8 items-center gap-2 rounded-control px-2 text-left text-[13px] text-fg-2 hover:bg-hover hover:text-fg"
+          >
+            <LogOut size={13} /> Sign out
+          </button>
         </div>
       </nav>
       <main className="min-h-0 flex-1 overflow-y-auto">

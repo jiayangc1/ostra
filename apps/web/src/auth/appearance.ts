@@ -31,8 +31,8 @@ export function clerkAppearance(theme: "dark" | "light") {
       fontSize: "14px",
       borderRadius: "6px",
     },
-    layout: {
-      logoPlacement: "none" as const,
+    // Core 3 renamed `layout` to `options`. AuthLayout draws the Ostra mark above the card.
+    options: {
       socialButtonsVariant: "blockButton" as const,
       unsafe_disableDevelopmentModeWarnings: true,
     },
@@ -40,9 +40,17 @@ export function clerkAppearance(theme: "dark" | "light") {
       card: { boxShadow: "none", border: `1px solid ${t.line}`, borderRadius: "12px" },
       cardBox: { boxShadow: "none", borderRadius: "12px" },
       headerTitle: { letterSpacing: "-0.02em", fontWeight: 600 },
-      formButtonPrimary: { boxShadow: "none", fontWeight: 500 },
-      socialButtonsBlockButton: { borderColor: t.line, boxShadow: "none" },
-      formFieldInput: { boxShadow: "none" },
+      // Clerk outlines controls with a box-shadow ring from more specific selectors; ours must win.
+      formButtonPrimary: { boxShadow: "none !important", fontWeight: 500 },
+      socialButtonsBlockButton: {
+        boxShadow: `inset 0 0 0 1px ${t.line} !important`,
+        "&:hover": { boxShadow: `inset 0 0 0 1px ${t.lineHover} !important`, background: t.hover },
+      },
+      formFieldInput: {
+        boxShadow: `inset 0 0 0 1px ${t.line} !important`,
+        "&:hover": { boxShadow: `inset 0 0 0 1px ${t.lineHover} !important` },
+        "&:focus": { boxShadow: `inset 0 0 0 1px ${t.focus}, 0 0 0 3px ${t.focus}33 !important` },
+      },
       footer: { background: "transparent" },
       footerActionLink: { color: t.fg, fontWeight: 500 },
     },

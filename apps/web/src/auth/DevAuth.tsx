@@ -59,7 +59,7 @@ export function DevAuth({ children }: { children: ReactNode }) {
 function DevSignIn({ title, onSubmit }: { title: string; onSubmit: (name: string) => void }) {
   const [value, setValue] = useState("you");
   return (
-    <AuthLayout footer="Development sign-in. Set VITE_CLERK_PUBLISHABLE_KEY to use Clerk.">
+    <AuthLayout footer="Development sign-in. Set CLERK_PUBLISHABLE_KEY to use Clerk.">
       <form
         className="flex w-80 flex-col gap-4 rounded-window border border-line bg-surface p-6"
         onSubmit={(e) => {

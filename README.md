@@ -37,7 +37,17 @@ Without any configuration the API uses an embedded Postgres (PGlite) under `.dat
 curl -X POST -H "Authorization: Bearer dev:you" localhost:8787/api/dev/seed
 ```
 
-Copy `.env.example` to `.env` and fill in what you need: `DATABASE_URL`, `REDIS_URL`, `OSTRA_MASTER_KEY`, Clerk keys, Google and Microsoft OAuth clients, S3, and `ANTHROPIC_API_KEY`. Production refuses to start without Clerk and a master key, and never honors demo mode or development sign-in.
+Copy `.env.example` to `.env` and fill in what you need: `DATABASE_URL`, `REDIS_URL`, `OSTRA_MASTER_KEY`, Clerk keys, Google and Microsoft OAuth clients, S3, and `ANTHROPIC_API_KEY`. Production refuses to start without Clerk and a master key, and never honors demo mode or development sign-in. The API and the web app both read `.env` and then `.env.local` at the repo root.
+
+### Clerk
+
+```sh
+npx clerk auth login
+npx clerk link --app <application_id>
+npx clerk env pull --file .env.local   # CLERK_PUBLISHABLE_KEY + CLERK_SECRET_KEY
+```
+
+With keys present, sign-in is Clerk's and `dev:` tokens are refused. To load demo mail as your Clerk user, copy a session token from the browser console (`await Clerk.session.getToken()`) and use it in place of `dev:you` above. End-to-end tests blank the keys and keep using development sign-in.
 
 ## Test
 
