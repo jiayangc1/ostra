@@ -1,0 +1,14 @@
+.git
+**/node_modules
+**/dist
+**/.astro
+.data
+.env
+.env.*
+!.env.example
+.clerk
+.turbo
+**/test-results
+**/playwright-report
+apps/desktop/src-tauri/target
+apps/desktop/src-tauri/gen

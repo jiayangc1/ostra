@@ -1,7 +1,7 @@
 /** Build-time settings for heyostra.com. Download links appear only once builds are published. */
 export const SITE = {
-  appUrl: import.meta.env.PUBLIC_APP_URL ?? "https://app.heyostra.com",
-  apiUrl: import.meta.env.PUBLIC_API_URL ?? "https://app.heyostra.com",
+  appUrl: import.meta.env.PUBLIC_APP_URL || "https://app.heyostra.com",
+  apiUrl: import.meta.env.PUBLIC_API_URL || "https://app.heyostra.com",
   downloads: {
     mac: import.meta.env.PUBLIC_DOWNLOAD_MAC as string | undefined,
     windows: import.meta.env.PUBLIC_DOWNLOAD_WINDOWS as string | undefined,
