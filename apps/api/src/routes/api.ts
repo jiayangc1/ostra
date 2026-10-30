@@ -12,6 +12,7 @@ import { connectRoutes } from "./accounts-connect.ts";
 import { oauthStartRoutes } from "./oauth.ts";
 import { attachmentRoute } from "./attachments.ts";
 import { devRoutes } from "../demo/routes.ts";
+import { composeRoutes } from "./compose.ts";
 import { folderCounts, getThreadDetail, listThreads } from "../services/threads.ts";
 import { settingsOf, updateSettings, upsertUserByClerkId } from "../services/users.ts";
 
@@ -248,6 +249,8 @@ export function apiRoutes(s: Services) {
   });
 
   api.get("/messages/:id/attachments/:index", attachmentRoute(s));
+
+  api.route("/", composeRoutes(s));
 
   if (s.config.demo) api.route("/dev", devRoutes(s));
 

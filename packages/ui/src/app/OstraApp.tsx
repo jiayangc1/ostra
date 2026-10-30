@@ -8,7 +8,8 @@ import { useTheme } from "../theme.tsx";
 import { Shell, type ShellExtensions } from "../shell/Shell.tsx";
 import { SettingsPage } from "../settings/SettingsPage.tsx";
 import { Onboarding } from "../onboarding/Onboarding.tsx";
-import { createApi } from "./api.ts";
+import { ComposerHost } from "../compose/ComposerHost.tsx";
+import { createApi, streamText } from "./api.ts";
 import { useAuthState } from "./auth.tsx";
 import type { CacheFactory } from "./cache.ts";
 import { RealtimeClient } from "./realtime.ts";
@@ -39,6 +40,7 @@ export function OstraApp(props: OstraAppProps) {
     const api = createApi(props.apiBase, auth.getToken);
     return new MailStore({
       api,
+      stream: (path, body, signal) => streamText(props.apiBase, path, body, auth.getToken, signal),
       cache: props.cacheFactory(userKey),
       notify: (message, opts) => toast({ message, tone: opts?.tone === "error" ? "error" : "default", action: opts?.action }),
     });
@@ -113,7 +115,7 @@ function Gate({ routes, shell, ShellFrame, openExternal }: OstraAppProps) {
     return <Navigate to="/onboarding" replace />;
   }
 
-  const shellEl = <Shell ext={shell} />;
+  const shellEl = <ComposerHost>{(c) => <Shell ext={{ ...shell, compose: c.compose, readerFooter: c.readerFooter }} />}</ComposerHost>;
   return (
     <Routes>
       {routes}

@@ -75,6 +75,8 @@ const ACTION_VERB: Record<ThreadActionName, string> = {
 
 export interface StoreDeps {
   api: AxiosInstance;
+  /** For streaming endpoints (AI writing), which axios can't stream in browsers. */
+  stream?: (path: string, body: unknown, signal?: AbortSignal) => AsyncGenerator<string>;
   cache: ClientCache;
   notify(message: string, opts?: { tone?: "error" | "default"; action?: { label: string; onClick: () => void } }): void;
 }
@@ -92,6 +94,11 @@ export class MailStore {
   /** The authenticated API client, for screens that talk to the API directly (settings, composer). */
   get api() {
     return this.deps.api;
+  }
+
+  stream(path: string, body: unknown, signal?: AbortSignal): AsyncGenerator<string> {
+    if (!this.deps.stream) throw new Error("Streaming isn't available");
+    return this.deps.stream(path, body, signal);
   }
 
   notify(message: string, opts?: Parameters<StoreDeps["notify"]>[1]) {
