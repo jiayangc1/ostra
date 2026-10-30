@@ -15,6 +15,7 @@ import type { Services } from "./services/context.ts";
 import { upsertUserByClerkId } from "./services/users.ts";
 import { clerkWebhook } from "./webhooks/clerk.ts";
 import { gmailWebhook, graphWebhook } from "./webhooks/push.ts";
+import { resendWebhook } from "./webhooks/resend.ts";
 import { oauthCallbackRoutes } from "./routes/oauth.ts";
 
 const clientIp = (c: { req: { header(n: string): string | undefined } }) =>
@@ -57,6 +58,7 @@ export function createApp(s: Services, opts: { staticDir?: string | undefined; e
   app.route("/webhooks/clerk", clerkWebhook(s));
   app.route("/webhooks/gmail", gmailWebhook(s));
   app.route("/webhooks/graph", graphWebhook(s));
+  app.route("/webhooks/resend", resendWebhook(s));
   app.route("/oauth", oauthCallbackRoutes(s));
   opts.extraRoutes?.(app);
 

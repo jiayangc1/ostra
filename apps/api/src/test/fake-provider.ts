@@ -25,6 +25,10 @@ export class FakeProvider implements MailProvider {
     const id = `${this.sent.length}-${Math.random().toString(36).slice(2)}`;
     return { providerMessageId: `sent-${id}`, rfcMessageId: `sent-${id}@test` };
   }
+  /** Resend-style inbound fetch. */
+  async fetchReceived(id: string) {
+    return msg({ providerMessageId: `resend:${id}`, subject: "Inbound via Resend" });
+  }
   async applyAction(id: string, action: ProviderAction) {
     if (this.failActions) throw new Error("provider down");
     this.actions.push({ id, action });

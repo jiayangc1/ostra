@@ -4,7 +4,8 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { HttpError, badRequest } from "../lib/errors.ts";
 import { isAllowedPort } from "../lib/ssrf.ts";
-import { createAccount, toAccountDto } from "../services/accounts.ts";
+import { createAccount, getAccount, toAccountDto } from "../services/accounts.ts";
+import { accounts, eq } from "@ostra/db";
 import type { Services } from "../services/context.ts";
 import type { AppEnv } from "./api.ts";
 
@@ -64,7 +65,48 @@ export function connectRoutes(s: Services) {
     return c.json(await finishConnect(s, c.get("user").id, "imap", color, credentials, connected, credentials.address.toLowerCase()), 201);
   });
 
+  r.post("/resend", async (c) => {
+    const body = z
+      .object({
+        apiKey: z.string().trim().regex(/^re_[A-Za-z0-9_]+$/, "Resend API keys start with re_"),
+        domain: z.string().trim().toLowerCase().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/, "Enter a domain like acme.dev"),
+        address: z.string().trim().toLowerCase().email(),
+        displayName: z.string().trim().max(80).nullable().default(null),
+        aliases: z.array(z.string().trim().toLowerCase().email()).max(20).default([]),
+        color: z.enum(COLORS),
+      })
+      .safeParse(await c.req.json().catch(() => null));
+    if (!body.success) throw badRequest(body.error.issues.map((i) => i.message).join("; "), "invalid_body");
+    const { color, ...rest } = body.data;
+    const credentials = { ...rest, webhookSecret: null };
+    const connected = await verify(s, "resend", credentials);
+    const account = await finishConnect(s, c.get("user").id, "resend", color, credentials, connected, rest.domain);
+    return c.json({ ...account, webhookUrl: await resendWebhookUrl(s, account.id) }, 201);
+  });
+
+  /** The inbound webhook URL to paste into Resend, and whether its secret is saved. */
+  r.get("/resend/:id/webhook", async (c) => {
+    const account = await getAccount(s, c.get("user").id, c.req.param("id"));
+    const creds = s.envelope.decryptJson<{ webhookSecret?: string | null }>(account.encryptedCredentials);
+    return c.json({ url: `${s.config.publicUrl}/webhooks/resend/${account.webhookToken}`, configured: !!creds.webhookSecret });
+  });
+
+  r.put("/resend/:id/webhook", async (c) => {
+    const account = await getAccount(s, c.get("user").id, c.req.param("id"));
+    if (account.provider !== "resend") throw badRequest("Not a Resend account");
+    const body = z.object({ signingSecret: z.string().trim().regex(/^whsec_[A-Za-z0-9+/=]+$/, "Signing secrets start with whsec_") }).safeParse(await c.req.json().catch(() => null));
+    if (!body.success) throw badRequest(body.error.issues.map((i) => i.message).join("; "), "invalid_body");
+    const creds = s.envelope.decryptJson<Record<string, unknown>>(account.encryptedCredentials);
+    await s.db.update(accounts).set({ encryptedCredentials: s.envelope.encryptJson({ ...creds, webhookSecret: body.data.signingSecret }), status: "active" }).where(eq(accounts.id, account.id));
+    return c.json({ configured: true });
+  });
+
   return r;
+}
+
+async function resendWebhookUrl(s: Services, accountId: string) {
+  const [row] = await s.db.select({ token: accounts.webhookToken }).from(accounts).where(eq(accounts.id, accountId));
+  return `${s.config.publicUrl}/webhooks/resend/${row!.token}`;
 }
 
 export { verify as verifyProvider };

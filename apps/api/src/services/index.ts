@@ -10,6 +10,7 @@ import { RealtimeHub } from "../lib/realtime.ts";
 import { ImapProvider, type ImapCredentials } from "@ostra/sync-imap";
 import { GmailProvider, type GmailCredentials } from "@ostra/sync-gmail";
 import { OutlookProvider, type OutlookCredentials } from "@ostra/sync-outlook";
+import { ResendProvider, type ResendCredentials } from "@ostra/sync-resend";
 import { assertPublicHost } from "../lib/ssrf.ts";
 import { noopAi } from "./ai.ts";
 import { PROVIDER_KINDS } from "@ostra/core";
@@ -87,6 +88,7 @@ function defaultProviders(config: Config): ProviderRegistry {
             }),
         }
       : {}),
+    resend: (ctx) => new ResendProvider(ctx.credentials as ResendCredentials),
     imap: (ctx) =>
       new ImapProvider(ctx.credentials as ImapCredentials, {
         checkHost,
