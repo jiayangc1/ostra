@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Ostra",
+  "version": "0.1.0",
+  "identifier": "com.heyostra.desktop",
+  "build": {
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../../web/dist",
+    "beforeDevCommand": "pnpm --filter @ostra/web dev",
+    "beforeBuildCommand": "pnpm --filter @ostra/web build:desktop"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Ostra",
+        "width": 1320,
+        "height": 840,
+        "minWidth": 820,
+        "minHeight": 560,
+        "backgroundColor": "#000000",
+        "theme": "Dark"
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self' https://*.clerk.accounts.dev https://clerk.heyostra.com https://challenges.cloudflare.com",
+        "style-src": "'self' 'unsafe-inline'",
+        "font-src": "'self' data:",
+        "img-src": "'self' data: blob: https:",
+        "connect-src": "'self' ipc: http://ipc.localhost https://app.heyostra.com wss://app.heyostra.com https://*.clerk.accounts.dev https://clerk.heyostra.com",
+        "frame-src": "'self' blob: https://*.clerk.accounts.dev https://challenges.cloudflare.com",
+        "worker-src": "'self' blob:"
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Productivity",
+    "shortDescription": "Every inbox, one place.",
+    "longDescription": "Ostra merges every email account you own into one fast, keyboard-first inbox, with real mail from real people up top.",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
+  }
+}
