@@ -1,0 +1,71 @@
+---
+import Legal from "../layouts/Legal.astro";
+---
+
+<Legal title="Privacy Policy" description="What Ostra collects, why, and how it's protected." updated="October 30, 2026">
+  <p>
+    Ostra is an email client. It connects to the mail accounts you choose and shows them in one inbox. This policy explains what Ostra collects,
+    why, and what it does with it.
+  </p>
+
+  <h2>What we collect</h2>
+  <ul>
+    <li><strong>Your Ostra account.</strong> Your name, email address and sign-in details, handled by our authentication provider, Clerk.</li>
+    <li>
+      <strong>Connected mail accounts.</strong> When you connect Gmail, Outlook, an IMAP server or Resend, we store the access tokens or credentials
+      needed to reach that account, and the mail we sync from it: messages, attachments, folders and labels.
+    </li>
+    <li><strong>Your settings.</strong> Labels, categories, sorting corrections you make, and preferences.</li>
+    <li><strong>Waitlist.</strong> If you join the waitlist, the email address you enter.</li>
+  </ul>
+  <p>We don't use advertising or third-party analytics, and we don't sell or rent your data.</p>
+
+  <h2>How we use it</h2>
+  <p>
+    Only to provide Ostra's features to you: showing, searching, sorting and labeling your mail, sending the mail you write, keeping your accounts in
+    sync, and the optional AI features described below.
+  </p>
+
+  <h2>How we protect it</h2>
+  <ul>
+    <li>Message bodies and account credentials are encrypted at rest with AES-256-GCM, using a separate key for each record.</li>
+    <li>All traffic to Ostra uses HTTPS. Connections to Google and Microsoft use OAuth, so Ostra never sees those passwords.</li>
+    <li>Our logs record errors and events, never message content.</li>
+  </ul>
+
+  <h2>AI features</h2>
+  <p>
+    To sort mail into categories and to draft or improve replies, Ostra sends the relevant message content to Anthropic's API. Anthropic processes it to
+    return a result and doesn't use it to train its models. Your data is never used to train AI models, ours or anyone else's.
+  </p>
+
+  <h2>Google user data</h2>
+  <p>
+    Ostra's use and transfer to any other app of information received from Google APIs will adhere to the
+    <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use
+    requirements. Gmail data is used only to provide the features you see in Ostra. It isn't used for advertising, isn't transferred to others except as
+    needed to provide those features (such as the AI processing above), for security, or to comply with the law, and isn't read by people unless you ask
+    us to for support, it's needed for security, or the law requires it.
+  </p>
+
+  <h2>Who processes data for us</h2>
+  <ul>
+    <li><strong>Clerk</strong> for sign-in and account management.</li>
+    <li><strong>Anthropic</strong> for the AI features.</li>
+    <li><strong>Google, Microsoft and your mail providers</strong>, to sync and send the mail in the accounts you connect.</li>
+  </ul>
+  <p>Ostra runs on servers in the United States.</p>
+
+  <h2>Keeping and deleting data</h2>
+  <p>
+    We keep your data while your account is open. Disconnecting a mail account deletes its credentials and synced mail from Ostra. Deleting your Ostra
+    account deletes everything we hold about you. You can also revoke Ostra's access at any time from your
+    <a href="https://myaccount.google.com/permissions">Google account</a> or Microsoft account settings.
+  </p>
+
+  <h2>Changes</h2>
+  <p>If we change this policy in a way that matters, we'll update the date above and tell signed-in users in the app.</p>
+
+  <h2>Contact</h2>
+  <p>Questions or requests: <a href="mailto:privacy@ostramail.com">privacy@ostramail.com</a>.</p>
+</Legal>
