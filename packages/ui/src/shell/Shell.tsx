@@ -168,8 +168,14 @@ export function Shell({ ext = {} }: { ext?: ShellExtensions }) {
 
   const compose = ext.compose;
   const replyTo = (mode: "reply" | "replyAll" | "forward") => {
+    if (!compose || !openId) return;
     const last = detail?.messages[detail.messages.length - 1];
-    if (compose && last && openId) compose({ mode, message: last, threadId: openId });
+    if (last) return compose({ mode, message: last, threadId: openId });
+    // Pressed before the thread finished loading: answer as soon as it arrives.
+    void store.loadThread(openId).then((d) => {
+      const m = d?.messages[d.messages.length - 1];
+      if (m) compose({ mode, message: m, threadId: openId });
+    }, () => {});
   };
 
   const go = (folder: VirtualFolder) => navigate(hrefFor({ kind: "folder", folder, accountId: view.kind === "folder" ? view.accountId : undefined }));
