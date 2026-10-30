@@ -20,3 +20,7 @@ export { ThemeProvider, useTheme, type ThemePreference } from "./theme.tsx";
 export { DesignPreview } from "./screens/DesignPreview.tsx";
 export { AuthProvider, useAuthState, type AuthState, type AuthUser } from "./app/auth.tsx";
 export { AuthLayout } from "./screens/AuthLayout.tsx";
+export { OstraApp, type OstraAppProps } from "./app/OstraApp.tsx";
+export { indexedDbCacheFactory, MemoryCache, type ClientCache, type CacheFactory } from "./app/cache.ts";
+export { useMailStore, useStore, type View } from "./app/store.ts";
+export { Shell, hrefFor, type ComposeRequest, type ShellExtensions } from "./shell/Shell.tsx";

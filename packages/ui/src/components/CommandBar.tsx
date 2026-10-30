@@ -66,6 +66,13 @@ export function CommandMenu({ items, placeholder = "Type a command or search…"
     } else if (e.key === "Enter") {
       e.preventDefault();
       run(filtered[cursor]);
+    } else if (!query && /^[1-9]$/.test(e.key)) {
+      // Pickers with numbered items: one keystroke.
+      const hit = items.find((i) => i.shortcut === e.key);
+      if (hit) {
+        e.preventDefault();
+        run(hit);
+      }
     }
   };
 

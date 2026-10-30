@@ -10,6 +10,7 @@ import { stopPush } from "../services/sync.ts";
 import { sendMessage } from "../services/send.ts";
 import { connectRoutes } from "./accounts-connect.ts";
 import { attachmentRoute } from "./attachments.ts";
+import { devRoutes } from "../demo/routes.ts";
 import { folderCounts, getThreadDetail, listThreads } from "../services/threads.ts";
 import { settingsOf, updateSettings, upsertUserByClerkId } from "../services/users.ts";
 
@@ -245,6 +246,8 @@ export function apiRoutes(s: Services) {
   });
 
   api.get("/messages/:id/attachments/:index", attachmentRoute(s));
+
+  if (s.config.demo) api.route("/dev", devRoutes(s));
 
   return api;
 }

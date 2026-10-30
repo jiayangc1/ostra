@@ -10,6 +10,8 @@ import { RealtimeHub } from "../lib/realtime.ts";
 import { ImapProvider, type ImapCredentials } from "@ostra/sync-imap";
 import { assertPublicHost } from "../lib/ssrf.ts";
 import { noopAi } from "./ai.ts";
+import { PROVIDER_KINDS } from "@ostra/core";
+import { DemoProvider, isDemoCredentials } from "../demo/provider.ts";
 import type { ProviderRegistry, Services } from "./context.ts";
 
 export interface ServiceOverrides {
@@ -45,7 +47,7 @@ export async function createServices(config: Config, o: ServiceOverrides = {}): 
     blobs: new EncryptedBlobStore(store, envelope),
     queue,
     hub,
-    providers: o.providers ?? defaultProviders(config),
+    providers: withDemo(config, o.providers ?? defaultProviders(config)),
     ai: noopAi,
     log,
     verifyToken: o.verifyToken ?? (await createTokenVerifier(config)),
@@ -63,6 +65,17 @@ function defaultProviders(config: Config): ProviderRegistry {
         log: (m, e) => log.warn(m, { accountId: ctx.account.id }, e),
       }),
   };
+}
+
+/** In demo mode, accounts created by the seeder use the local demo provider whatever their kind. */
+function withDemo(config: Config, registry: ProviderRegistry): ProviderRegistry {
+  if (!config.demo) return registry;
+  const out: ProviderRegistry = {};
+  for (const kind of PROVIDER_KINDS) {
+    const real = registry[kind];
+    out[kind] = (ctx) => (isDemoCredentials(ctx.credentials) ? new DemoProvider(ctx.credentials) : real ? real(ctx) : new DemoProvider(ctx.credentials));
+  }
+  return out;
 }
 
 export async function closeServices(s: Services) {

@@ -22,6 +22,8 @@ export interface Config {
   inlineWorkers: boolean;
   /** Let users point IMAP/SMTP at private addresses (self-hosted, Proton Bridge). Off by default: SSRF. */
   allowPrivateMailHosts: boolean;
+  /** Seeded demo accounts + /api/dev routes. Never in production. */
+  demo: boolean;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -73,5 +75,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     anthropicApiKey: env.ANTHROPIC_API_KEY || undefined,
     inlineWorkers: env.OSTRA_INLINE_WORKERS !== "false",
     allowPrivateMailHosts: env.ALLOW_PRIVATE_MAIL_HOSTS === "true",
+    demo: env.OSTRA_DEMO === "true" && nodeEnv !== "production",
   };
 }

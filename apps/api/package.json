@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --clear-screen=false src/main.ts",
+    "dev": "OSTRA_DEMO=${OSTRA_DEMO:-true} tsx watch --clear-screen=false src/main.ts",
     "start": "tsx src/main.ts",
     "worker": "tsx src/worker-main.ts",
     "seed": "tsx src/seed-cli.ts",

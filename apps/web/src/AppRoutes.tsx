@@ -1,13 +1,8 @@
-import { Button, OstraLogo, useAuthState } from "@ostra/ui";
+import { OstraApp, indexedDbCacheFactory } from "@ostra/ui";
 
-/** Placeholder until the three-pane app lands. */
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+const WS_URL = API_BASE ? `${API_BASE.replace(/^http/, "ws")}/ws` : `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`;
+
 export function AppRoutes() {
-  const auth = useAuthState();
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-4">
-      <OstraLogo />
-      <p className="text-fg-2">Signed in as {auth.user?.email}</p>
-      <Button onClick={() => void auth.signOut()}>Sign out</Button>
-    </div>
-  );
+  return <OstraApp apiBase={API_BASE} wsUrl={WS_URL} cacheFactory={indexedDbCacheFactory} />;
 }

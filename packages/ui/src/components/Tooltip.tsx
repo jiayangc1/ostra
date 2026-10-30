@@ -8,10 +8,12 @@ export interface TooltipProps {
   side?: "top" | "bottom" | "right";
   children: ReactNode;
   delay?: number;
+  /** Classes for the wrapper, e.g. "flex w-full" for full-width nav items. */
+  className?: string;
 }
 
 /** Hover/focus tooltip with an optional shortcut key cap. Secondary information only. */
-export function Tooltip({ content, shortcut, side = "bottom", children, delay = 400 }: TooltipProps) {
+export function Tooltip({ content, shortcut, side = "bottom", children, delay = 400, className }: TooltipProps) {
   const [open, setOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -25,7 +27,7 @@ export function Tooltip({ content, shortcut, side = "bottom", children, delay = 
   };
 
   return (
-    <span className="relative inline-flex" onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide} onMouseDown={hide}>
+    <span className={cn("relative inline-flex", className)} onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide} onMouseDown={hide}>
       {children}
       {open && (
         <span
