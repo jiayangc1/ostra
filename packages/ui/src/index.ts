@@ -18,3 +18,5 @@ export { Toggle } from "./components/Toggle.tsx";
 export { Tooltip } from "./components/Tooltip.tsx";
 export { ThemeProvider, useTheme, type ThemePreference } from "./theme.tsx";
 export { DesignPreview } from "./screens/DesignPreview.tsx";
+export { AuthProvider, useAuthState, type AuthState, type AuthUser } from "./app/auth.tsx";
+export { AuthLayout } from "./screens/AuthLayout.tsx";

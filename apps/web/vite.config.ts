@@ -6,8 +6,8 @@ const API = process.env.OSTRA_API_URL ?? "http://localhost:8787";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // Relative asset paths so the same build loads inside Tauri.
-  base: "./",
+  // Absolute paths: deep links like /sign-in/factor-one must resolve assets from the root (Tauri serves from / too).
+  base: "/",
   clearScreen: false,
   server: {
     port: 5173,
