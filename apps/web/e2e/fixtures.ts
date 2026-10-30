@@ -4,6 +4,8 @@ const API = "http://localhost:8790";
 
 /** Each test signs in as its own dev user, seeded with demo mail. */
 export const test = base.extend<{ user: string; signIn: (opts?: { onboarded?: boolean; labels?: boolean }) => Promise<Page> }>({
+  // Playwright fixtures must destructure their dependencies, even when there are none.
+  // eslint-disable-next-line no-empty-pattern
   user: async ({}, use, info) => {
     await use(`e2e${info.workerIndex}x${info.testId.slice(0, 8).replace(/[^a-z0-9]/gi, "")}`.toLowerCase());
   },
