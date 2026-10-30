@@ -1,0 +1,157 @@
+{
+ "profile": {
+  "emailAddress": "sam@gmail.com",
+  "messagesTotal": 2,
+  "threadsTotal": 2,
+  "historyId": "1000"
+ },
+ "sendAs": {
+  "sendAs": [
+   {
+    "sendAsEmail": "sam@gmail.com",
+    "displayName": "Sam Rivera",
+    "isPrimary": true,
+    "verificationStatus": "accepted"
+   },
+   {
+    "sendAsEmail": "sam@tidepool.dev",
+    "displayName": "Sam at Tidepool",
+    "verificationStatus": "accepted"
+   },
+   {
+    "sendAsEmail": "pending@x.com",
+    "verificationStatus": "pending"
+   }
+  ]
+ },
+ "list": {
+  "messages": [
+   {
+    "id": "m1",
+    "threadId": "t1"
+   },
+   {
+    "id": "m2",
+    "threadId": "t2"
+   }
+  ],
+  "resultSizeEstimate": 2
+ },
+ "m1": {
+  "id": "m1",
+  "threadId": "t1",
+  "labelIds": [
+   "INBOX",
+   "UNREAD",
+   "CATEGORY_UPDATES"
+  ],
+  "snippet": "",
+  "historyId": "990",
+  "internalDate": "1791363600000",
+  "raw": "UmV0dXJuLVBhdGg6IDxib3VuY2VAbWFpbC53ZWVrbHkuZGV2PgpEZWxpdmVyZWQtVG86IG1lQGFjbWUuZGV2CkZyb206ICJXZWVrbHkgRGV2IiA8aGVsbG9Ad2Vla2x5LmRldj4KVG86IG1lQGFjbWUuZGV2ClN1YmplY3Q6ID0_VVRGLTg_UT9Jc3N1ZV80MjpfRWRnZV9mdW5jdGlvbnNfPUUyPTlBPUExPz0KRGF0ZTogVHVlLCAwNiBPY3QgMjAyNiAwOTowMDowMCArMDAwMApNZXNzYWdlLUlEOiA8SXNzdWU0Mi5BQkNAbWFpbC53ZWVrbHkuZGV2PgpMaXN0LVVuc3Vic2NyaWJlOiA8aHR0cHM6Ly93ZWVrbHkuZGV2L3UvYWJjPiwgPG1haWx0bzp1bnN1YkB3ZWVrbHkuZGV2PgpMaXN0LVVuc3Vic2NyaWJlLVBvc3Q6IExpc3QtVW5zdWJzY3JpYmU9T25lLUNsaWNrCkxpc3QtSWQ6IFdlZWtseSBEZXYgPHdlZWtseS5kZXY-ClByZWNlZGVuY2U6IGJ1bGsKTUlNRS1WZXJzaW9uOiAxLjAKQ29udGVudC1UeXBlOiBtdWx0aXBhcnQvYWx0ZXJuYXRpdmU7IGJvdW5kYXJ5PSJiMSIKCi0tYjEKQ29udGVudC1UeXBlOiB0ZXh0L3BsYWluOyBjaGFyc2V0PXV0Zi04CgpUaGlzIHdlZWs6IGVkZ2UgZnVuY3Rpb25zLApjb2xkIHN0YXJ0cywgYW5kIG1vcmUuCgotLWIxCkNvbnRlbnQtVHlwZTogdGV4dC9odG1sOyBjaGFyc2V0PXV0Zi04Cgo8aHRtbD48Ym9keT48aDE-VGhpcyB3ZWVrPC9oMT48cD5FZGdlIGZ1bmN0aW9ucywgY29sZCBzdGFydHMsIGFuZCBtb3JlLjwvcD48L2JvZHk-PC9odG1sPgotLWIxLS0K"
+ },
+ "m2": {
+  "id": "m2",
+  "threadId": "t2",
+  "labelIds": [
+   "INBOX",
+   "IMPORTANT"
+  ],
+  "snippet": "",
+  "historyId": "995",
+  "internalDate": "1791459000000",
+  "raw": "RnJvbTogIkRvZSwgSmFuZSIgPGphbmVAZnVuZC52Yz4KVG86IEZvdW5kZXIgPGhlbGxvQGFjbWUuZGV2PgpDYzogcGFydG5lckBmdW5kLnZjClN1YmplY3Q6IFJlOiBTZWVkIHJvdW5kIGRlY2sKRGF0ZTogV2VkLCAwNyBPY3QgMjAyNiAxNDozMDowMCAtMDcwMApNZXNzYWdlLUlEOiA8cmVwbHktMUBmdW5kLnZjPgpJbi1SZXBseS1UbzogPGRlY2stMUBhY21lLmRldj4KUmVmZXJlbmNlczogPGludHJvLTBAZnVuZC52Yz4gPGRlY2stMUBhY21lLmRldj4KTUlNRS1WZXJzaW9uOiAxLjAKQ29udGVudC1UeXBlOiBtdWx0aXBhcnQvbWl4ZWQ7IGJvdW5kYXJ5PSJtaXgiCgotLW1peApDb250ZW50LVR5cGU6IHRleHQvcGxhaW47IGNoYXJzZXQ9dXRmLTgKClRoYW5rcywgY29tbWVudHMgYXR0YWNoZWQuIENhbiB3ZSB0YWxrIFRodXJzZGF5PwoKPiBPbiBUdWUsIHlvdSB3cm90ZToKPiBIZXJlJ3MgdGhlIGRlY2suCgotLW1peApDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL3BkZjsgbmFtZT0iZGVjay1ub3Rlcy5wZGYiCkNvbnRlbnQtRGlzcG9zaXRpb246IGF0dGFjaG1lbnQ7IGZpbGVuYW1lPSJkZWNrLW5vdGVzLnBkZiIKQ29udGVudC1UcmFuc2Zlci1FbmNvZGluZzogYmFzZTY0CgpKVkJFUmkweExqUUtKY2ZzajZJS01TQXdJRzlpYWdvOFBDOVVlWEJsTDBOaGRHRnNiMmMrUGdwbGJtUnZZbW9LCi0tbWl4LS0K"
+ },
+ "history": {
+  "history": [
+   {
+    "id": "1001",
+    "messagesAdded": [
+     {
+      "message": {
+       "id": "m3",
+       "threadId": "t2",
+       "labelIds": [
+        "INBOX",
+        "UNREAD"
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "id": "1002",
+    "labelsRemoved": [
+     {
+      "message": {
+       "id": "m1",
+       "threadId": "t1",
+       "labelIds": [
+        "CATEGORY_UPDATES"
+       ]
+      },
+      "labelIds": [
+       "INBOX",
+       "UNREAD"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "1003",
+    "labelsAdded": [
+     {
+      "message": {
+       "id": "m2",
+       "threadId": "t2",
+       "labelIds": [
+        "SPAM"
+       ]
+      },
+      "labelIds": [
+       "SPAM"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "1004",
+    "messagesDeleted": [
+     {
+      "message": {
+       "id": "m9",
+       "threadId": "t9"
+      }
+     }
+    ]
+   },
+   {
+    "id": "1005",
+    "messagesAdded": [
+     {
+      "message": {
+       "id": "d1",
+       "threadId": "t5",
+       "labelIds": [
+        "DRAFT"
+       ]
+      }
+     }
+    ]
+   }
+  ],
+  "historyId": "1005"
+ },
+ "m3": {
+  "id": "m3",
+  "threadId": "t2",
+  "labelIds": [
+   "INBOX",
+   "UNREAD"
+  ],
+  "snippet": "",
+  "historyId": "995",
+  "internalDate": "1791459000000",
+  "raw": "RnJvbTogIkRvZSwgSmFuZSIgPGphbmVAZnVuZC52Yz4KVG86IEZvdW5kZXIgPGhlbGxvQGFjbWUuZGV2PgpDYzogcGFydG5lckBmdW5kLnZjClN1YmplY3Q6IFJlOiBTZWVkIHJvdW5kIGRlY2sKRGF0ZTogV2VkLCAwNyBPY3QgMjAyNiAxNDozMDowMCAtMDcwMApNZXNzYWdlLUlEOiA8cmVwbHktMkBmdW5kLnZjPgpJbi1SZXBseS1UbzogPGRlY2stMUBhY21lLmRldj4KUmVmZXJlbmNlczogPGludHJvLTBAZnVuZC52Yz4gPGRlY2stMUBhY21lLmRldj4KTUlNRS1WZXJzaW9uOiAxLjAKQ29udGVudC1UeXBlOiBtdWx0aXBhcnQvbWl4ZWQ7IGJvdW5kYXJ5PSJtaXgiCgotLW1peApDb250ZW50LVR5cGU6IHRleHQvcGxhaW47IGNoYXJzZXQ9dXRmLTgKCkZvbGxvd2luZyB1cC4gQ2FuIHdlIHRhbGsgVGh1cnNkYXk_Cgo-IE9uIFR1ZSwgeW91IHdyb3RlOgo-IEhlcmUncyB0aGUgZGVjay4KCi0tbWl4CkNvbnRlbnQtVHlwZTogYXBwbGljYXRpb24vcGRmOyBuYW1lPSJkZWNrLW5vdGVzLnBkZiIKQ29udGVudC1EaXNwb3NpdGlvbjogYXR0YWNobWVudDsgZmlsZW5hbWU9ImRlY2stbm90ZXMucGRmIgpDb250ZW50LVRyYW5zZmVyLUVuY29kaW5nOiBiYXNlNjQKCkpWQkVSaTB4TGpRS0pjZnNqNklLTVNBd0lHOWlhZ284UEM5VWVYQmxMME5oZEdGc2IyYytQZ3BsYm1Sdlltb0sKLS1taXgtLQo"
+ }
+}

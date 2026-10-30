@@ -8,6 +8,8 @@ import { log } from "../lib/log.ts";
 import { MemoryQueue, createBullQueue, type JobQueue } from "../lib/queue.ts";
 import { RealtimeHub } from "../lib/realtime.ts";
 import { ImapProvider, type ImapCredentials } from "@ostra/sync-imap";
+import { GmailProvider, type GmailCredentials } from "@ostra/sync-gmail";
+import { OutlookProvider, type OutlookCredentials } from "@ostra/sync-outlook";
 import { assertPublicHost } from "../lib/ssrf.ts";
 import { noopAi } from "./ai.ts";
 import { PROVIDER_KINDS } from "@ostra/core";
@@ -58,7 +60,33 @@ export async function createServices(config: Config, o: ServiceOverrides = {}): 
 
 function defaultProviders(config: Config): ProviderRegistry {
   const checkHost = (host: string) => assertPublicHost(host, { allowPrivate: config.allowPrivateMailHosts });
+  const httpsPublic = config.publicUrl.startsWith("https://");
   return {
+    ...(config.google
+      ? {
+          gmail: (ctx) =>
+            new GmailProvider(ctx.credentials as GmailCredentials, {
+              clientId: config.google!.clientId,
+              clientSecret: config.google!.clientSecret,
+              pubsubTopic: config.google!.pubsubTopic,
+              save: (c) => ctx.saveCredentials(c as never),
+            }),
+        }
+      : {}),
+    ...(config.microsoft
+      ? {
+          outlook: (ctx) =>
+            new OutlookProvider(ctx.credentials as OutlookCredentials, {
+              clientId: config.microsoft!.clientId,
+              clientSecret: config.microsoft!.clientSecret,
+              tenant: config.microsoft!.tenant,
+              save: (c) => ctx.saveCredentials(c as never),
+              // Graph only delivers to public https endpoints; locally, polling covers it.
+              notificationUrl: httpsPublic ? `${config.publicUrl}/webhooks/graph` : undefined,
+              clientState: ctx.account.webhookToken,
+            }),
+        }
+      : {}),
     imap: (ctx) =>
       new ImapProvider(ctx.credentials as ImapCredentials, {
         checkHost,

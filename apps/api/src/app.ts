@@ -14,6 +14,8 @@ import { apiRoutes, type AppEnv } from "./routes/api.ts";
 import type { Services } from "./services/context.ts";
 import { upsertUserByClerkId } from "./services/users.ts";
 import { clerkWebhook } from "./webhooks/clerk.ts";
+import { gmailWebhook, graphWebhook } from "./webhooks/push.ts";
+import { oauthCallbackRoutes } from "./routes/oauth.ts";
 
 const clientIp = (c: { req: { header(n: string): string | undefined } }) =>
   c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || "local";
@@ -53,6 +55,9 @@ export function createApp(s: Services, opts: { staticDir?: string | undefined; e
   app.get("/healthz", (c) => c.json({ ok: true }));
   app.route("/api", apiRoutes(s));
   app.route("/webhooks/clerk", clerkWebhook(s));
+  app.route("/webhooks/gmail", gmailWebhook(s));
+  app.route("/webhooks/graph", graphWebhook(s));
+  app.route("/oauth", oauthCallbackRoutes(s));
   opts.extraRoutes?.(app);
 
   /**

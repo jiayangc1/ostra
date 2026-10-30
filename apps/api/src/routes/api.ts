@@ -9,6 +9,7 @@ import type { Services } from "../services/context.ts";
 import { stopPush } from "../services/sync.ts";
 import { sendMessage } from "../services/send.ts";
 import { connectRoutes } from "./accounts-connect.ts";
+import { oauthStartRoutes } from "./oauth.ts";
 import { attachmentRoute } from "./attachments.ts";
 import { devRoutes } from "../demo/routes.ts";
 import { folderCounts, getThreadDetail, listThreads } from "../services/threads.ts";
@@ -192,6 +193,7 @@ export function apiRoutes(s: Services) {
 
   // ---- Accounts ----
   api.route("/accounts/connect", connectRoutes(s));
+  api.route("/accounts/oauth", oauthStartRoutes(s));
 
   api.get("/accounts", async (c) => {
     const rows = await s.db.select().from(accounts).where(eq(accounts.userId, c.get("user").id)).orderBy(accounts.createdAt);
