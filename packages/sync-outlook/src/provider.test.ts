@@ -47,7 +47,7 @@ function graph(overrides: Record<string, unknown> = {}) {
   }) as typeof fetch;
   const provider = new OutlookProvider(
     { email: "sam@northwind.io", tokens: { accessToken: "at", refreshToken: "rt", expiresAt: Date.now() + 3_600_000 } },
-    { clientId: "c", clientSecret: "s", tenant: "common", save: async () => {}, notificationUrl: "https://api.heyostra.com/webhooks/graph", clientState: "secret-state", fetch: f },
+    { clientId: "c", clientSecret: "s", tenant: "common", save: async () => {}, notificationUrl: "https://api.ostramail.com/webhooks/graph", clientState: "secret-state", fetch: f },
   );
   return { provider, calls };
 }

@@ -67,4 +67,4 @@ Every external dependency has a local stand-in, so `pnpm dev` works on a bare ma
 
 - Clerk has no official Tauri SDK. The desktop app runs Clerk's web flow inside the webview, so `tauri://localhost` (macOS/Linux) and `http://tauri.localhost` (Windows) must be allowed origins in Clerk. The API's `CLERK_AUTHORIZED_PARTIES` includes them by default.
 - Google and Microsoft block OAuth in embedded webviews, so the desktop app opens consent in the system browser. The new account reaches the app over the WebSocket (`account.update`).
-- The desktop build talks to the hosted API (`https://app.heyostra.com`; override with `OSTRA_DESKTOP_API_URL`).
+- The desktop build talks to the hosted API (`https://app.ostramail.com`; override with `OSTRA_DESKTOP_API_URL`).

@@ -9,7 +9,7 @@ apps/
   web/        React 19 + Vite SPA (React Router 7, Tailwind 4)
   api/        Hono HTTP + WebSocket API, sync workers, webhooks
   desktop/    Tauri v2 shell around the web build (SQLite cache)
-  site/       Astro marketing site for heyostra.com
+  site/       Astro marketing site for ostramail.com
 packages/
   core/       Normalized Message/Thread model, provider interface, folder
               mapping, Message-ID dedupe, smart "from", MIME (Node-only subpaths)

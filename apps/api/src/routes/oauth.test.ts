@@ -7,8 +7,8 @@ let h: Harness;
 before(async () => {
   h = await createHarness();
   h.s.config.google = { clientId: "gid", clientSecret: "gs", pubsubTopic: undefined, pubsubAudience: undefined };
-  h.s.config.publicUrl = "https://api.heyostra.com";
-  h.s.config.appUrl = "https://app.heyostra.com";
+  h.s.config.publicUrl = "https://api.ostramail.com";
+  h.s.config.appUrl = "https://app.ostramail.com";
 });
 after(() => h.close());
 
@@ -16,7 +16,7 @@ test("start returns a consent URL whose state is sealed and points back to our c
   const res = await h.request("/api/accounts/oauth/gmail/start", { method: "POST", json: { color: "pink", returnTo: "/onboarding" } });
   const { url } = (await res.json()) as { url: string };
   const u = new URL(url);
-  assert.equal(u.searchParams.get("redirect_uri"), "https://api.heyostra.com/oauth/gmail/callback");
+  assert.equal(u.searchParams.get("redirect_uri"), "https://api.ostramail.com/oauth/gmail/callback");
   const state = u.searchParams.get("state")!;
   assert.ok(!Buffer.from(state, "base64url").toString().includes("onboarding"), "state is opaque");
 });
@@ -29,14 +29,14 @@ test("unconfigured providers say so", async () => {
 test("forged or tampered state is rejected without touching the provider", async () => {
   const res = await h.request("/oauth/gmail/callback?code=x&state=AAAA", { user: "" });
   assert.equal(res.status, 302);
-  assert.match(res.headers.get("location")!, /^https:\/\/app\.heyostra\.com\/settings\/accounts\?error=/);
+  assert.match(res.headers.get("location")!, /^https:\/\/app\.ostramail\.com\/settings\/accounts\?error=/);
 });
 
 test("returnTo can't become an open redirect", async () => {
   const res = await h.request("/api/accounts/oauth/gmail/start", { method: "POST", json: { returnTo: "//evil.com" } });
   const state = new URL(((await res.json()) as { url: string }).url).searchParams.get("state")!;
   const cb = await h.request(`/oauth/gmail/callback?error=access_denied&state=${state}`, { user: "" });
-  assert.match(cb.headers.get("location")!, /^https:\/\/app\.heyostra\.com\/settings\/accounts\?error=Access/);
+  assert.match(cb.headers.get("location")!, /^https:\/\/app\.ostramail\.com\/settings\/accounts\?error=Access/);
 });
 
 test("graph webhook echoes validation and only accepts the account's clientState", async () => {
@@ -59,7 +59,7 @@ test("graph webhook echoes validation and only accepts the account's clientState
 
 test("gmail push without OIDC configuration or with a bad token is refused", async () => {
   assert.equal((await h.request("/webhooks/gmail", { method: "POST", user: "", json: {} })).status, 503);
-  h.s.config.google!.pubsubAudience = "https://api.heyostra.com/webhooks/gmail";
+  h.s.config.google!.pubsubAudience = "https://api.ostramail.com/webhooks/gmail";
   const res = await h.request("/webhooks/gmail", { method: "POST", user: "", headers: { authorization: "Bearer not.a.jwt" }, json: { message: { data: "" } } });
   assert.equal(res.status, 401);
 });

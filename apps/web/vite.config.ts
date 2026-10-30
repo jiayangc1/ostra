@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
   // The desktop build talks to the hosted API unless told otherwise.
   define:
     mode === "desktop" && !process.env.VITE_API_URL
-      ? { "import.meta.env.VITE_API_URL": JSON.stringify(process.env.OSTRA_DESKTOP_API_URL ?? "https://app.heyostra.com") }
+      ? { "import.meta.env.VITE_API_URL": JSON.stringify(process.env.OSTRA_DESKTOP_API_URL ?? "https://app.ostramail.com") }
       : {},
   // Absolute paths: deep links like /sign-in/factor-one must resolve assets from the root (Tauri serves from / too).
   base: "/",

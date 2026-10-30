@@ -5,9 +5,9 @@ import { z } from "zod";
 import { rateLimit } from "../lib/rate-limit.ts";
 import type { Services } from "../services/context.ts";
 
-const SITE_ORIGINS = (process.env.SITE_ORIGINS ?? "https://heyostra.com,https://www.heyostra.com,http://localhost:4321").split(",").map((s) => s.trim());
+const SITE_ORIGINS = (process.env.SITE_ORIGINS ?? "https://ostramail.com,https://www.ostramail.com,http://localhost:4321").split(",").map((s) => s.trim());
 
-/** Unauthenticated endpoints for heyostra.com. */
+/** Unauthenticated endpoints for ostramail.com. */
 export function publicRoutes(s: Services) {
   const r = new Hono();
   r.use("*", cors({ origin: (o) => (SITE_ORIGINS.includes(o) ? o : null), allowMethods: ["POST"], allowHeaders: ["Content-Type"] }));
