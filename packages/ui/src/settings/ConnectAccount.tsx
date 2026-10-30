@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useState, type FormEvent } from "react";
-import { guessServers, presetForAddress, type Color } from "@ostra/core";
-import { ArrowLeft, Check, Copy, Globe, Mail, Server } from "lucide-react";
+import { guessServers, presetById, presetForAddress, type Color, type ImapPreset } from "@ostra/core";
+import { ArrowLeft, ArrowUpRight, AtSign, Check, Cloud, Copy, Globe, Mail, Server } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import { Input } from "../components/Input.tsx";
 import { Toggle } from "../components/Toggle.tsx";
@@ -10,14 +10,19 @@ import { ApiError } from "../app/api.ts";
 import { useMailStore } from "../app/store.ts";
 import { ColorPicker } from "./ColorPicker.tsx";
 
-type Kind = "gmail" | "outlook" | "imap" | "resend";
+type Kind = "gmail" | "outlook" | "icloud" | "yahoo" | "imap" | "resend";
 
 const PROVIDERS: { kind: Kind; name: string; blurb: string; icon: ReactNode }[] = [
   { kind: "gmail", name: "Gmail", blurb: "Google Workspace or gmail.com", icon: <GoogleMark /> },
   { kind: "outlook", name: "Outlook", blurb: "Microsoft 365 or outlook.com", icon: <MicrosoftMark /> },
-  { kind: "imap", name: "IMAP / SMTP", blurb: "Fastmail, iCloud, any mail host", icon: <Server size={16} strokeWidth={1.75} /> },
+  { kind: "icloud", name: "iCloud Mail", blurb: "icloud.com, me.com or your iCloud+ domain", icon: <Cloud size={16} strokeWidth={1.75} /> },
+  { kind: "yahoo", name: "Yahoo Mail", blurb: "yahoo.com or ymail.com", icon: <AtSign size={16} strokeWidth={1.75} /> },
+  { kind: "imap", name: "Other (IMAP)", blurb: "Fastmail, Zoho, any mail host", icon: <Server size={16} strokeWidth={1.75} /> },
   { kind: "resend", name: "Resend", blurb: "Your domain, sent and received via Resend", icon: <Globe size={16} strokeWidth={1.75} /> },
 ];
+
+/** Providers connected with just an address and an app password. */
+const APP_PASSWORD: Partial<Record<Kind, string>> = { gmail: "gmail", icloud: "icloud", yahoo: "yahoo" };
 
 export interface ConnectAccountProps {
   defaultColor: Color;
@@ -47,13 +52,36 @@ export function ConnectAccount({ defaultColor, returnTo, onConnected, openExtern
     }
   };
 
-  if (kind === "imap" || kind === "resend") {
+  if (kind && kind !== "outlook") {
+    const preset = APP_PASSWORD[kind] ? presetById(APP_PASSWORD[kind]) : null;
     return (
       <div className="flex animate-slide-up flex-col gap-5">
         <button type="button" onClick={() => setKind(null)} className="o-press flex w-fit items-center gap-1.5 rounded-control text-[13px] text-fg-3 hover:text-fg">
           <ArrowLeft size={14} /> All providers
         </button>
-        {kind === "imap" ? <ImapForm color={color} onColor={setColor} onDone={onConnected} /> : <ResendForm color={color} onColor={setColor} onDone={onConnected} />}
+        {kind === "gmail" && (
+          <>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <h3 className="text-sm font-semibold">Gmail</h3>
+                <p className="text-[13px] text-fg-3">Sign in with Google, or connect with an app password instead.</p>
+              </div>
+              <Button variant="secondary" loading={busy === "gmail"} prefix={<GoogleMark />} className="self-start" onClick={() => void oauth("gmail")}>
+                Sign in with Google
+              </Button>
+            </div>
+            <div className="flex items-center gap-3 text-[12px] text-fg-3">
+              <span className="h-px flex-1 bg-line" />
+              or use an app password
+              <span className="h-px flex-1 bg-line" />
+            </div>
+          </>
+        )}
+        {kind === "resend" ? (
+          <ResendForm color={color} onColor={setColor} onDone={onConnected} />
+        ) : (
+          <ImapForm preset={preset} heading={kind !== "gmail"} color={color} onColor={setColor} onDone={onConnected} />
+        )}
       </div>
     );
   }
@@ -66,7 +94,7 @@ export function ConnectAccount({ defaultColor, returnTo, onConnected, openExtern
             key={p.kind}
             type="button"
             disabled={busy !== null}
-            onClick={() => (p.kind === "gmail" || p.kind === "outlook" ? void oauth(p.kind) : setKind(p.kind))}
+            onClick={() => (p.kind === "outlook" ? void oauth(p.kind) : setKind(p.kind))}
             className="group o-press flex items-start gap-3 rounded-card border border-line bg-surface p-4 text-left hover:-translate-y-px hover:border-line-hover hover:bg-hover disabled:opacity-60"
           >
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-line bg-canvas text-fg">{p.icon}</span>
@@ -89,21 +117,38 @@ function errorText(err: unknown) {
   return err instanceof ApiError || err instanceof Error ? err.message : "Couldn't connect.";
 }
 
-function ImapForm({ color, onColor, onDone }: { color: Color; onColor: (c: Color) => void; onDone: () => void }) {
+/**
+ * With `preset`, the servers are fixed and only the address and app password are
+ * asked for (this also covers custom domains hosted there). Without it, servers
+ * are guessed from the address and can be edited.
+ */
+function ImapForm({
+  preset: fixed,
+  heading = true,
+  color,
+  onColor,
+  onDone,
+}: {
+  preset?: ImapPreset | null;
+  heading?: boolean;
+  color: Color;
+  onColor: (c: Color) => void;
+  onDone: () => void;
+}) {
   const store = useMailStore();
   const [address, setAddress] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [advanced, setAdvanced] = useState(false);
-  const [servers, setServers] = useState(() => guessServers(""));
+  const [servers, setServers] = useState(() => (fixed ? { imap: fixed.imap, smtp: fixed.smtp } : guessServers("")));
   const [touchedServers, setTouchedServers] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const preset = presetForAddress(address);
+  const preset = fixed ?? presetForAddress(address);
 
   const onAddress = (v: string) => {
     setAddress(v);
-    if (!touchedServers) {
+    if (!fixed && !touchedServers) {
       const p = presetForAddress(v);
       setServers(p ? { imap: p.imap, smtp: p.smtp } : guessServers(v));
     }
@@ -113,13 +158,15 @@ function ImapForm({ color, onColor, onDone }: { color: Color; onColor: (c: Color
     e.preventDefault();
     setBusy(true);
     setError(null);
+    // App passwords are often shown in groups ("abcd efgh ..."); the spaces aren't part of them.
+    const pass = fixed ? password.replace(/\s+/g, "") : password;
     try {
       await store.api.post("/accounts/connect/imap", {
         address,
         displayName: name || null,
         color,
-        imap: { ...servers.imap, user: address, pass: password },
-        smtp: { ...servers.smtp, user: address, pass: password },
+        imap: { ...servers.imap, user: address, pass },
+        smtp: { ...servers.smtp, user: address, pass },
       });
       onDone();
     } catch (err) {
@@ -156,15 +203,47 @@ function ImapForm({ color, onColor, onDone }: { color: Color; onColor: (c: Color
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-semibold">IMAP / SMTP</h3>
-        <p className="text-[13px] text-fg-3">Your password is encrypted before it's stored and never logged.</p>
-      </div>
-      <Input label="Email address" type="email" autoComplete="email" required value={address} onChange={(e) => onAddress(e.target.value)} placeholder="you@yourdomain.com" />
+      {heading && (
+        <div className="flex flex-col gap-1">
+          <h3 className="text-sm font-semibold">{fixed ? fixed.name : "IMAP / SMTP"}</h3>
+          <p className="text-[13px] text-fg-3">
+            {fixed ? "Connect with your address and an app password." : "Your password is encrypted before it's stored and never logged."}
+          </p>
+        </div>
+      )}
+      <Input
+        label="Email address"
+        type="email"
+        autoComplete="email"
+        required
+        value={address}
+        onChange={(e) => onAddress(e.target.value)}
+        placeholder={fixed ? `you@${fixed.domains[0]}` : "you@yourdomain.com"}
+      />
       <Input label="Your name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Shown to people you email" />
-      <Input label="Password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} description={preset?.passwordHint ?? "Most providers need an app password here, not your login password."} />
-      <Toggle size="sm" checked={advanced} onChange={setAdvanced} label={preset ? `Server settings (${preset.name})` : "Server settings"} />
-      {advanced && (
+      <Input
+        label={fixed ? "App password" : "Password"}
+        type="password"
+        autoComplete="current-password"
+        required
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        description={
+          <>
+            {preset?.passwordHint ?? "Most providers need an app password here, not your login password."}
+            {preset?.passwordUrl && (
+              <>
+                {" "}
+                <a href={preset.passwordUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-fg underline-offset-2 hover:underline">
+                  Create one <ArrowUpRight size={12} />
+                </a>
+              </>
+            )}
+          </>
+        }
+      />
+      {!fixed && <Toggle size="sm" checked={advanced} onChange={setAdvanced} label={preset ? `Server settings (${preset.name})` : "Server settings"} />}
+      {!fixed && advanced && (
         <div className="flex animate-slide-down flex-col gap-3 rounded-card border border-line p-3">
           {server("imap")}
           {server("smtp")}

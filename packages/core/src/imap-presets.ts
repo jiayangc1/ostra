@@ -7,9 +7,20 @@ export interface ImapPreset {
   smtp: { host: string; port: number; secure: boolean };
   /** Shown next to the password field. */
   passwordHint?: string;
+  /** Where the user creates the app password. */
+  passwordUrl?: string;
 }
 
 export const IMAP_PRESETS: readonly ImapPreset[] = [
+  {
+    id: "gmail",
+    name: "Gmail",
+    domains: ["gmail.com", "googlemail.com"],
+    imap: { host: "imap.gmail.com", port: 993, secure: true },
+    smtp: { host: "smtp.gmail.com", port: 465, secure: true },
+    passwordHint: "Turn on 2-Step Verification, then create an app password.",
+    passwordUrl: "https://myaccount.google.com/apppasswords",
+  },
   {
     id: "fastmail",
     name: "Fastmail",
@@ -24,7 +35,8 @@ export const IMAP_PRESETS: readonly ImapPreset[] = [
     domains: ["icloud.com", "me.com", "mac.com"],
     imap: { host: "imap.mail.me.com", port: 993, secure: true },
     smtp: { host: "smtp.mail.me.com", port: 587, secure: false },
-    passwordHint: "Use an app-specific password from account.apple.com.",
+    passwordHint: "Create an app-specific password under Sign-In and Security.",
+    passwordUrl: "https://account.apple.com/account/manage",
   },
   {
     id: "zoho",
@@ -39,7 +51,8 @@ export const IMAP_PRESETS: readonly ImapPreset[] = [
     domains: ["yahoo.com", "ymail.com"],
     imap: { host: "imap.mail.yahoo.com", port: 993, secure: true },
     smtp: { host: "smtp.mail.yahoo.com", port: 465, secure: true },
-    passwordHint: "Use an app password.",
+    passwordHint: "Create an app password under Account security.",
+    passwordUrl: "https://login.yahoo.com/account/security",
   },
   {
     id: "migadu",
@@ -57,6 +70,10 @@ export const IMAP_PRESETS: readonly ImapPreset[] = [
     passwordHint: "Use the password shown in Proton Mail Bridge.",
   },
 ];
+
+export function presetById(id: string): ImapPreset | null {
+  return IMAP_PRESETS.find((p) => p.id === id) ?? null;
+}
 
 export function presetForAddress(address: string): ImapPreset | null {
   const domain = address.split("@")[1]?.toLowerCase() ?? "";
