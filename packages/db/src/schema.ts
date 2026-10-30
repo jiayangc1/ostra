@@ -254,3 +254,10 @@ export type IdentityRow = typeof identities.$inferSelect;
 export type ThreadRow = typeof threads.$inferSelect;
 export type MessageRow = typeof messages.$inferSelect;
 export type LabelRow = typeof labels.$inferSelect;
+
+/** Marketing-site waitlist. Public, so only an address and where it came from. */
+export const waitlist = pgTable("waitlist", {
+  email: text("email").primaryKey(),
+  source: text("source"),
+  createdAt: createdAt(),
+});

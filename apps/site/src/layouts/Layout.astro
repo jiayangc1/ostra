@@ -1,0 +1,36 @@
+---
+import "../styles.css";
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#000000" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/svg+xml" href="/ostra-icon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/ostra-icon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/ostra-icon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/ostra-icon-180.png" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL("/og.jpg", Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body class="min-h-full bg-canvas text-fg antialiased">
+    <slot />
+  </body>
+</html>
