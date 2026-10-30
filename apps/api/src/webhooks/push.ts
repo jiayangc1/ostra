@@ -24,7 +24,10 @@ export function gmailWebhook(s: Services) {
     if (!audience) return c.json({ error: "Gmail push isn't configured" }, 503);
     const token = c.req.header("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
     try {
-      await jwtVerify(token, GOOGLE_JWKS, { audience, issuer: ["https://accounts.google.com", "accounts.google.com"] });
+      const { payload } = await jwtVerify(token, GOOGLE_JWKS, { audience, issuer: ["https://accounts.google.com", "accounts.google.com"] });
+      // Any Google identity can mint a token for our audience; only the push subscription's account counts.
+      const sa = s.config.google?.pubsubServiceAccount;
+      if (sa && !(payload.email === sa && payload.email_verified === true)) throw new Error("wrong signer");
     } catch {
       return c.json({ error: "Invalid token" }, 401);
     }

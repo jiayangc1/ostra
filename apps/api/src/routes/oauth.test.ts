@@ -6,7 +6,7 @@ import { createHarness, type Harness } from "../test/harness.ts";
 let h: Harness;
 before(async () => {
   h = await createHarness();
-  h.s.config.google = { clientId: "gid", clientSecret: "gs", pubsubTopic: undefined, pubsubAudience: undefined };
+  h.s.config.google = { clientId: "gid", clientSecret: "gs", pubsubTopic: undefined, pubsubAudience: undefined, pubsubServiceAccount: undefined };
   h.s.config.publicUrl = "https://api.ostramail.com";
   h.s.config.appUrl = "https://app.ostramail.com";
 });

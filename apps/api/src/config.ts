@@ -15,7 +15,7 @@ export interface Config {
   /** Dev auth is only possible outside production when Clerk is not configured. */
   authMode: "clerk" | "dev";
   s3: { bucket: string; region: string; endpoint: string | undefined; accessKeyId: string | undefined; secretAccessKey: string | undefined } | null;
-  google: { clientId: string; clientSecret: string; pubsubTopic: string | undefined; pubsubAudience: string | undefined } | null;
+  google: { clientId: string; clientSecret: string; pubsubTopic: string | undefined; pubsubAudience: string | undefined; pubsubServiceAccount: string | undefined } | null;
   microsoft: { clientId: string; clientSecret: string; tenant: string } | null;
   anthropicApiKey: string | undefined;
   /** Run sync workers in the API process (single-process dev / small deploys). */
@@ -66,6 +66,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
             clientSecret: env.GOOGLE_CLIENT_SECRET,
             pubsubTopic: env.GOOGLE_PUBSUB_TOPIC || undefined,
             pubsubAudience: env.GOOGLE_PUBSUB_AUDIENCE || undefined,
+            pubsubServiceAccount: env.GOOGLE_PUBSUB_SERVICE_ACCOUNT || undefined,
           }
         : null,
     microsoft:
