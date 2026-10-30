@@ -89,6 +89,15 @@ export class MailStore {
 
   constructor(private readonly deps: StoreDeps) {}
 
+  /** The authenticated API client, for screens that talk to the API directly (settings, composer). */
+  get api() {
+    return this.deps.api;
+  }
+
+  notify(message: string, opts?: Parameters<StoreDeps["notify"]>[1]) {
+    this.deps.notify(message, opts);
+  }
+
   // ---------- subscription ----------
   subscribe = (fn: () => void) => {
     this.listeners.add(fn);

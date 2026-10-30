@@ -6,6 +6,7 @@ import { EmptyState } from "../components/EmptyState.tsx";
 import { Button } from "../components/Button.tsx";
 import { useTheme } from "../theme.tsx";
 import { Shell, type ShellExtensions } from "../shell/Shell.tsx";
+import { SettingsPage } from "../settings/SettingsPage.tsx";
 import { createApi } from "./api.ts";
 import { useAuthState } from "./auth.tsx";
 import type { CacheFactory } from "./cache.ts";
@@ -23,6 +24,8 @@ export interface OstraAppProps {
   shell?: ShellExtensions;
   /** Wraps the shell, e.g. to mount the composer next to it. */
   ShellFrame?: (props: { children: ReactNode }) => ReactNode;
+  /** Open a URL outside the app (desktop shell: the system browser). */
+  openExternal?: (url: string) => void;
 }
 
 /** The signed-in app: owns the store, cache and realtime connection for one user. */
@@ -70,7 +73,7 @@ export function OstraApp(props: OstraAppProps) {
   );
 }
 
-function Gate({ routes, shell, ShellFrame }: OstraAppProps) {
+function Gate({ routes, shell, ShellFrame, openExternal }: OstraAppProps) {
   const bootStatus = useStore((s) => s.bootStatus);
   const settings = useStore((s) => s.boot?.settings);
   const location = useLocation();
@@ -113,6 +116,7 @@ function Gate({ routes, shell, ShellFrame }: OstraAppProps) {
   return (
     <Routes>
       {routes}
+      <Route path="/settings/:section?" element={<SettingsPage openExternal={openExternal} />} />
       <Route path="/" element={<Navigate to="/inbox" replace />} />
       <Route path="/label/:labelId/:threadId?" element={ShellFrame ? <ShellFrame>{shellEl}</ShellFrame> : shellEl} />
       <Route path="/:folder/:threadId?" element={ShellFrame ? <ShellFrame>{shellEl}</ShellFrame> : shellEl} />
