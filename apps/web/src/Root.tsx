@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
-import { ListSkeleton, useAuthState } from "@ostra/ui";
+import { ShellSkeleton, useAuthState } from "@ostra/ui";
 import { DevAuth } from "./auth/DevAuth.tsx";
 
 // Clerk is the largest dependency; it loads only when a key is configured.
@@ -40,11 +40,7 @@ export function RequireAuth() {
   const auth = useAuthState();
   const location = useLocation();
   if (auth.status === "loading") {
-    return (
-      <div className="h-full" aria-busy="true">
-        <ListSkeleton rows={8} />
-      </div>
-    );
+    return <ShellSkeleton />;
   }
   if (auth.status === "signedOut") return <Navigate to="/sign-in" replace state={{ from: location.pathname }} />;
   return <Outlet />;

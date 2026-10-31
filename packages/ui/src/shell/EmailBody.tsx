@@ -6,7 +6,7 @@ const CSP = "default-src 'none'; img-src https: data: cid:; style-src 'unsafe-in
 function document(html: string): string {
   return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${CSP}"><base target="_blank"><style>
 html,body{margin:0;padding:0;background:#fff;color:#171717;font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-wrap:anywhere}
-body{padding:20px}img{max-width:100%;height:auto}table{max-width:100%}pre{white-space:pre-wrap}
+body{padding:16px}img{max-width:100%;height:auto}table{max-width:100%}pre{white-space:pre-wrap}
 </style></head><body>${html}</body></html>`;
 }
 
@@ -49,7 +49,7 @@ export function HtmlBody({ html }: { html: string }) {
       referrerPolicy="no-referrer"
       srcDoc={document(html)}
       style={{ height }}
-      className="w-full rounded-card border border-line bg-white"
+      className="block w-full rounded-control border border-line bg-white"
     />
   );
 }

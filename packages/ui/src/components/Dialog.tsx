@@ -23,8 +23,9 @@ export function Dialog({ open, onClose, children, label, className, placement = 
     if (!open) return;
     restore.current = document.activeElement as HTMLElement | null;
     const t = requestAnimationFrame(() => {
-      const el = panel.current?.querySelector<HTMLElement>("[data-autofocus], input, textarea, button, [tabindex='0']");
-      el?.focus();
+      // Fields take focus; otherwise the panel does, so no button wears a focus ring on open.
+      const el = panel.current?.querySelector<HTMLElement>("[data-autofocus], input:not([type=hidden]), textarea, select");
+      (el ?? panel.current)?.focus();
     });
     return () => {
       cancelAnimationFrame(t);
@@ -65,7 +66,8 @@ export function Dialog({ open, onClose, children, label, className, placement = 
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className={cn("relative w-full max-w-lg overflow-hidden rounded-window bg-elevated shadow-window", closing ? "animate-pop-out" : "animate-pop-in", className)}
+        tabIndex={-1}
+        className={cn("relative w-full max-w-lg overflow-hidden rounded-window bg-elevated shadow-window outline-none", closing ? "animate-pop-out" : "animate-pop-in", className)}
       >
         {children}
       </div>

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { parseAddressList, type ThreadSummary } from "@ostra/core";
-import { AlertTriangle, ChevronDown, Paperclip, Sparkles, X } from "lucide-react";
+import { AlertTriangle, ChevronDown, Minus, Paperclip, Sparkles, Trash2, X } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import { CommandMenu, type CommandItem } from "../components/CommandBar.tsx";
 import { Dot } from "../components/Dot.tsx";
-import { Kbd } from "../components/Kbd.tsx";
+import { Kbd, isMac } from "../components/Kbd.tsx";
+import { Tooltip } from "../components/Tooltip.tsx";
 import { LoadingDots } from "../components/LoadingDots.tsx";
 import { cn } from "../lib/cn.ts";
 import { formatBytes } from "../app/format.ts";
@@ -34,10 +35,12 @@ export interface ComposerProps {
   initial: DraftFields;
   threadId?: string | undefined;
   onClose: () => void;
+  /** Playing the exit animation; the host unmounts it shortly after. */
+  closing?: boolean;
 }
 
 /** The composer window: smart from, AI drafting and rewriting, pre-send check, ⌘Enter. */
-export function Composer({ mode, initial, threadId, onClose }: ComposerProps) {
+export function Composer({ mode, initial, threadId, onClose, closing = false }: ComposerProps) {
   const store = useMailStore();
   const boot = useStore((s) => s.boot);
   const identities = boot?.identities ?? [];
@@ -58,10 +61,21 @@ export function Composer({ mode, initial, threadId, onClose }: ComposerProps) {
   /** Items are built when the menu opens (they depend on the body at that moment). */
   const [aiMenu, setAiMenu] = useState<CommandItem[] | null>(null);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [minimized, setMinimized] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const title = mode === "new" ? "New message" : mode === "forward" ? "Forward" : mode === "replyAll" ? "Reply all" : "Reply";
+
+  const dirty = d.body.trim() !== initial.body.trim() || d.to !== initial.to || d.cc !== initial.cc || d.subject !== initial.subject || attachments.length > 0;
+  // Closing never silently throws away writing: a dirty draft asks first.
+  const requestClose = () => {
+    if (dirty && !confirmDiscard) {
+      setMinimized(false);
+      setConfirmDiscard(true);
+    } else onClose();
+  };
 
   const update = (patch: Partial<DraftFields>) => {
     setD((x) => ({ ...x, ...patch }));
@@ -173,7 +187,7 @@ export function Composer({ mode, initial, threadId, onClose }: ComposerProps) {
         { timeout: 120_000 },
       );
       if (data.thread) store.upsertThread(data.thread);
-      store.notify("Sent");
+      store.notify("Sent", { tone: "success" });
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't send.");
@@ -190,11 +204,12 @@ export function Composer({ mode, initial, threadId, onClose }: ComposerProps) {
       run: () => {
         if (aiMenu) setAiMenu(null);
         else if (aiBusy) abort.current?.abort();
-        else onClose();
+        else if (confirmDiscard) setConfirmDiscard(false);
+        else requestClose();
       },
     },
     { keys: "mod+j", run: () => aiOn && toggleAiMenu(), inInputs: true },
-  ]);
+  ], !closing);
 
   const addFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = [...(e.target.files ?? [])];
@@ -240,15 +255,43 @@ export function Composer({ mode, initial, threadId, onClose }: ComposerProps) {
     <section
       role="dialog"
       aria-label={title}
-      className="fixed bottom-4 right-4 z-40 flex max-h-[min(720px,calc(100vh-32px))] w-[min(620px,calc(100vw-32px))] animate-pop-in flex-col overflow-hidden rounded-window bg-surface shadow-window"
+      className={cn(
+        "fixed bottom-0 right-0 z-40 flex max-h-[min(720px,calc(100dvh-16px))] w-full origin-bottom-right flex-col overflow-hidden rounded-t-window bg-elevated shadow-window",
+        "sm:bottom-4 sm:right-4 sm:max-h-[min(720px,calc(100dvh-32px))] sm:w-[min(620px,calc(100vw-32px))] sm:rounded-window",
+        closing ? "pointer-events-none animate-sheet-out" : "animate-sheet-in",
+      )}
     >
-      <header className="flex h-10 shrink-0 items-center justify-between border-b border-line pl-4 pr-2">
-        <h2 className="text-[13px] font-medium">{title}</h2>
-        <Button size="sm" variant="tertiary" iconOnly aria-label="Close composer" onClick={onClose}>
-          <X size={14} />
-        </Button>
+      <header className={cn("flex h-11 shrink-0 items-center gap-2 pl-4 pr-2 transition-colors duration-[var(--motion-fast)]", !minimized && "border-b border-line", confirmDiscard && "bg-red-bg")}>
+        {confirmDiscard ? (
+          <>
+            <span role="alert" className="flex-1 animate-fade-in text-[13px] font-medium text-fg">
+              Discard this draft?
+            </span>
+            <Button size="sm" variant="tertiary" onClick={() => setConfirmDiscard(false)}>
+              Keep editing
+            </Button>
+            <Button size="sm" variant="danger" data-autofocus onClick={onClose}>
+              Discard
+            </Button>
+          </>
+        ) : (
+          <>
+            <button type="button" onClick={() => setMinimized((m) => !m)} className="flex min-w-0 flex-1 items-center gap-2 text-left" aria-expanded={!minimized}>
+              <h2 className="truncate text-[13px] font-semibold">{minimized && d.subject.trim() ? d.subject : title}</h2>
+              {aiBusy && <LoadingDots className="text-fg-3" />}
+            </button>
+            <Button size="sm" variant="tertiary" iconOnly aria-label={minimized ? "Expand composer" : "Minimize composer"} onClick={() => setMinimized((m) => !m)}>
+              <Minus size={14} />
+            </Button>
+            <Button size="sm" variant="tertiary" iconOnly aria-label="Close composer" onClick={requestClose}>
+              <X size={14} />
+            </Button>
+          </>
+        )}
       </header>
 
+      <div className="o-expand min-h-0 flex-1" data-open={!minimized}>
+      <div className="flex min-h-0 flex-col" inert={minimized}>
       <div className="flex shrink-0 flex-col border-b border-line text-[13px]">
         <Row label="From">
           <span className="flex min-w-0 flex-1 items-center gap-2">
@@ -270,27 +313,27 @@ export function Composer({ mode, initial, threadId, onClose }: ComposerProps) {
                 </option>
               ))}
             </select>
-            {fromReason && <span className="hidden shrink-0 font-mono text-[11px] text-fg-3 sm:inline">{fromReason}</span>}
+            {fromReason && <span className="hidden shrink-0 animate-fade-in text-[12px] text-fg-3 sm:inline">{fromReason}</span>}
             <ChevronDown size={12} className="shrink-0 text-fg-3" aria-hidden="true" />
           </span>
         </Row>
         <Row label="To" htmlFor="compose-to">
           <input id="compose-to" value={d.to} onChange={(e) => update({ to: e.target.value })} className="min-w-0 flex-1 bg-transparent py-2 outline-none" autoComplete="off" />
           {!showCc && (
-            <button type="button" onClick={() => setShowCc(true)} className="shrink-0 px-1 font-mono text-[11px] text-fg-3 hover:text-fg">
+            <button type="button" onClick={() => setShowCc(true)} className="o-press shrink-0 rounded-[4px] px-1.5 py-0.5 text-[12px] text-fg-3 hover:bg-hover hover:text-fg">
               Cc Bcc
             </button>
           )}
         </Row>
         {showCc && (
-          <>
+          <div className="flex animate-slide-down flex-col">
             <Row label="Cc" htmlFor="compose-cc">
               <input id="compose-cc" value={d.cc} onChange={(e) => update({ cc: e.target.value })} className="min-w-0 flex-1 bg-transparent py-2 outline-none" autoComplete="off" />
             </Row>
             <Row label="Bcc" htmlFor="compose-bcc">
               <input id="compose-bcc" value={d.bcc} onChange={(e) => update({ bcc: e.target.value })} className="min-w-0 flex-1 bg-transparent py-2 outline-none" autoComplete="off" />
             </Row>
-          </>
+          </div>
         )}
         <Row label="Subject" htmlFor="compose-subject">
           <input id="compose-subject" value={d.subject} onChange={(e) => update({ subject: e.target.value })} className="min-w-0 flex-1 bg-transparent py-2 font-medium outline-none" />
@@ -304,20 +347,20 @@ export function Composer({ mode, initial, threadId, onClose }: ComposerProps) {
           value={d.body}
           onChange={(e) => update({ body: e.target.value })}
           readOnly={!!aiBusy}
-          placeholder={threadId && aiOn ? "Write, or press ⌘J for AI" : "Write your message"}
+          placeholder={threadId && aiOn ? `Write, or press ${isMac() ? "⌘J" : "Ctrl+J"} for AI` : "Write your message"}
           className={cn("min-h-48 flex-1 resize-none bg-transparent px-4 py-3 text-sm leading-relaxed outline-none placeholder:text-fg-3", aiBusy && "text-fg-2")}
         />
         {d.quote && (
           <div className="px-4 pb-3">
-            <button type="button" onClick={() => setShowQuote((x) => !x)} className="rounded-[4px] bg-hover px-1.5 font-mono text-[11px] text-fg-3 hover:text-fg" aria-expanded={showQuote}>
+            <button type="button" onClick={() => setShowQuote((x) => !x)} className="o-press rounded-[4px] bg-hover px-1.5 font-mono text-[11px] text-fg-3 hover:bg-active hover:text-fg" aria-expanded={showQuote} aria-label={showQuote ? "Hide quoted text" : "Show quoted text"}>
               ···
             </button>
             {showQuote && <pre className="mt-2 animate-slide-down whitespace-pre-wrap border-l-2 border-line pl-3 font-sans text-[13px] text-fg-3">{d.quote}</pre>}
           </div>
         )}
         {aiMenu && (
-          <div className="absolute bottom-2 left-2 z-10 w-72 animate-pop-in overflow-hidden rounded-card bg-surface shadow-menu">
-            <CommandMenu items={aiMenu} placeholder="Ask AI…" onDone={() => setAiMenu(null)} emptyText={threadId ? "Write something first" : "Write something to rewrite"} />
+          <div className="absolute bottom-2 left-2 z-10 w-72 origin-bottom-left animate-pop-in overflow-hidden rounded-card bg-elevated shadow-menu">
+            <CommandMenu footer={false} items={aiMenu} placeholder="Ask AI…" onDone={() => setAiMenu(null)} emptyText={threadId ? "Write something first" : "Write something to rewrite"} />
           </div>
         )}
       </div>
@@ -325,11 +368,11 @@ export function Composer({ mode, initial, threadId, onClose }: ComposerProps) {
       {attachments.length > 0 && (
         <ul className="flex shrink-0 flex-wrap gap-1.5 px-4 pb-2" aria-label="Attachments">
           {attachments.map((a, i) => (
-            <li key={i} className="flex items-center gap-1.5 rounded-control border border-line px-2 py-1 text-[12px]">
+            <li key={i} className="flex animate-pop-in items-center gap-1.5 rounded-control border border-line bg-panel py-1 pl-2 pr-1 text-[12px]">
               <Paperclip size={11} className="text-fg-3" />
               <span className="max-w-40 truncate">{a.filename}</span>
               <span className="font-mono text-[11px] text-fg-3">{formatBytes(a.size)}</span>
-              <button type="button" aria-label={`Remove ${a.filename}`} onClick={() => setAttachments((x) => x.filter((_, j) => j !== i))} className="text-fg-3 hover:text-fg">
+              <button type="button" aria-label={`Remove ${a.filename}`} onClick={() => setAttachments((x) => x.filter((_, j) => j !== i))} className="o-press rounded-[4px] p-0.5 text-fg-3 hover:bg-hover hover:text-fg">
                 <X size={11} />
               </button>
             </li>
@@ -338,7 +381,7 @@ export function Composer({ mode, initial, threadId, onClose }: ComposerProps) {
       )}
 
       {warnings && warnings.length > 0 && (
-        <div role="alert" className="flex shrink-0 animate-slide-up flex-col gap-2 border-t border-line bg-amber-bg/40 px-4 py-3" data-testid="presend-warnings">
+        <div role="alert" className="flex shrink-0 animate-slide-up flex-col gap-2 border-t border-amber/20 bg-amber-bg px-4 py-3" data-testid="presend-warnings">
           {warnings.map((w, i) => (
             <div key={i} className="flex items-start gap-2 text-[13px]">
               <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber" />
@@ -366,7 +409,8 @@ export function Composer({ mode, initial, threadId, onClose }: ComposerProps) {
       )}
 
       {error && (
-        <p role="alert" className="shrink-0 border-t border-line px-4 py-2 text-[13px] text-red">
+        <p role="alert" className="flex shrink-0 animate-slide-down items-center gap-2 border-t border-line bg-red-bg px-4 py-2 text-[13px] text-red">
+          <AlertTriangle size={14} className="shrink-0" />
           {error}
         </p>
       )}
@@ -395,7 +439,14 @@ export function Composer({ mode, initial, threadId, onClose }: ComposerProps) {
             <LoadingDots /> Writing… <Kbd keys="esc" />
           </span>
         )}
+        <Tooltip content="Discard draft" side="top" align="end">
+          <Button size="sm" variant="tertiary" iconOnly aria-label="Discard draft" className="ml-auto hover:text-red" onClick={requestClose}>
+            <Trash2 size={14} />
+          </Button>
+        </Tooltip>
       </footer>
+      </div>
+      </div>
     </section>
   );
 }

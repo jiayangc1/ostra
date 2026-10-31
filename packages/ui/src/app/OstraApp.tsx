@@ -1,11 +1,11 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router";
+import { WifiOff } from "lucide-react";
 import { useToast } from "../components/Toast.tsx";
-import { ListSkeleton } from "../components/Skeleton.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { Button } from "../components/Button.tsx";
 import { useTheme } from "../theme.tsx";
-import { Shell, type ShellExtensions } from "../shell/Shell.tsx";
+import { Shell, ShellSkeleton, type ShellExtensions } from "../shell/Shell.tsx";
 // Screens visited rarely load on demand.
 const SettingsPage = lazy(() => import("../settings/SettingsPage.tsx").then((m) => ({ default: m.SettingsPage })));
 const Onboarding = lazy(() => import("../onboarding/Onboarding.tsx").then((m) => ({ default: m.Onboarding })));
@@ -43,7 +43,7 @@ export function OstraApp(props: OstraAppProps) {
       api,
       stream: (path, body, signal) => streamText(props.apiBase, path, body, auth.getToken, signal),
       cache: props.cacheFactory(userKey),
-      notify: (message, opts) => toast({ message, tone: opts?.tone === "error" ? "error" : "default", action: opts?.action }),
+      notify: (message, opts) => toast({ message, tone: opts?.tone ?? "default", action: opts?.action }),
     });
     // One store per signed-in user.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -99,18 +99,14 @@ function Gate({ routes, shell, ShellFrame, openExternal }: OstraAppProps) {
   }, [settings?.theme, preference]);
 
   if (bootStatus === "loading") {
-    return (
-      <div className="grid h-full grid-cols-[200px_340px_1fr]" aria-busy="true">
-        <div className="border-r border-line" />
-        <div className="border-r border-line">
-          <ListSkeleton rows={10} />
-        </div>
-        <div />
-      </div>
-    );
+    return <ShellSkeleton />;
   }
   if (bootStatus === "error") {
-    return <EmptyState className="h-full" title="Couldn't reach Ostra" description="Check your connection and try again." action={<Button onClick={() => location.pathname && window.location.reload()}>Try again</Button>} />;
+    return (
+      <div className="flex h-full items-center justify-center bg-frame">
+        <EmptyState icon={<WifiOff size={18} />} title="Couldn't reach Ostra" description="Check your connection and try again." action={<Button onClick={() => window.location.reload()}>Try again</Button>} />
+      </div>
+    );
   }
   if (settings && !settings.onboarded && !location.pathname.startsWith("/onboarding") && !location.pathname.startsWith("/settings")) {
     return <Navigate to="/onboarding" replace />;

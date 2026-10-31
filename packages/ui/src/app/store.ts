@@ -78,7 +78,7 @@ export interface StoreDeps {
   /** For streaming endpoints (AI writing), which axios can't stream in browsers. */
   stream?: (path: string, body: unknown, signal?: AbortSignal) => AsyncGenerator<string>;
   cache: ClientCache;
-  notify(message: string, opts?: { tone?: "error" | "default"; action?: { label: string; onClick: () => void } }): void;
+  notify(message: string, opts?: { tone?: "error" | "success" | "default"; action?: { label: string; onClick: () => void } }): void;
 }
 
 export class MailStore {

@@ -9,9 +9,14 @@ import { draftFor } from "./model.ts";
 export function ComposerHost({ children }: { children: (api: { compose: (r: ComposeRequest) => void; readerFooter: (threadId: string) => ReactNode }) => ReactNode }) {
   const store = useMailStore();
   const own = useStore((s) => s.boot?.identities)?.map((i) => i.address) ?? [];
-  const [open, setOpen] = useState<(ComposeRequest & { key: number }) | null>(null);
+  const [open, setOpen] = useState<(ComposeRequest & { key: number; closing?: boolean }) | null>(null);
 
   const compose = (r: ComposeRequest) => setOpen((prev) => ({ ...r, key: (prev?.key ?? 0) + 1 }));
+  // Play the composer's exit before unmounting it; a new compose in the meantime wins.
+  const close = () => {
+    setOpen((prev) => (prev ? { ...prev, closing: true } : prev));
+    setTimeout(() => setOpen((prev) => (prev?.closing ? null : prev)), 200);
+  };
 
   const readerFooter = (threadId: string) => (
     <AiDraftLine
@@ -30,7 +35,7 @@ export function ComposerHost({ children }: { children: (api: { compose: (r: Comp
       {children({ compose, readerFooter })}
       {open && initial && (
         <Suspense fallback={null}>
-          <Composer key={open.key} mode={open.mode} initial={initial} threadId={open.threadId} onClose={() => setOpen(null)} />
+          <Composer key={open.key} mode={open.mode} initial={initial} threadId={open.threadId} onClose={close} closing={!!open.closing} />
         </Suspense>
       )}
     </>
