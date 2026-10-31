@@ -16,10 +16,10 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
 }
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: "bg-primary text-primary-fg hover:bg-primary-hover border border-transparent",
-  secondary: "bg-canvas text-fg border border-line hover:border-line-hover hover:bg-hover",
+  primary: "bg-primary text-primary-fg hover:bg-primary-hover border border-transparent shadow-[inset_0_1px_0_rgb(255_255_255/0.08)]",
+  secondary: "bg-transparent text-fg border border-line-hover hover:border-line-strong hover:bg-hover",
   tertiary: "bg-transparent text-fg-2 border border-transparent hover:text-fg hover:bg-hover",
-  danger: "bg-red text-white border border-transparent hover:opacity-90",
+  danger: "bg-red text-white border border-transparent hover:brightness-110",
 };
 
 const SIZES: Record<ButtonSize, string> = {

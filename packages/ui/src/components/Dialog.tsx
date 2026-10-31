@@ -1,6 +1,7 @@
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "../lib/cn.ts";
+import { usePresence } from "../lib/presence.ts";
 
 export interface DialogProps {
   open: boolean;
@@ -12,10 +13,11 @@ export interface DialogProps {
   placement?: "top" | "center";
 }
 
-/** Modal surface with backdrop fade, scale-in content, focus trap and Esc to close. */
+/** Modal surface: backdrop fade, scale-in and scale-out content, focus trap, Esc to close. */
 export function Dialog({ open, onClose, children, label, className, placement = "center" }: DialogProps) {
   const panel = useRef<HTMLDivElement>(null);
   const restore = useRef<HTMLElement | null>(null);
+  const { mounted, closing } = usePresence(open, 140);
 
   useEffect(() => {
     if (!open) return;
@@ -30,12 +32,12 @@ export function Dialog({ open, onClose, children, label, className, placement = 
     };
   }, [open]);
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
       e.stopPropagation();
-      onClose();
+      if (!closing) onClose();
       return;
     }
     if (e.key !== "Tab" || !panel.current) return;
@@ -54,20 +56,39 @@ export function Dialog({ open, onClose, children, label, className, placement = 
 
   return createPortal(
     <div
-      className={cn("fixed inset-0 z-50 flex justify-center px-4", placement === "top" ? "items-start pt-[12vh]" : "items-center")}
+      className={cn("fixed inset-0 z-50 flex justify-center px-4", placement === "top" ? "items-start pt-[12vh]" : "items-center", closing && "pointer-events-none")}
       onKeyDown={onKeyDown}
     >
-      <div className="absolute inset-0 animate-fade-in bg-overlay backdrop-blur-[2px]" onMouseDown={onClose} aria-hidden="true" />
+      <div className={cn("absolute inset-0 bg-overlay", closing ? "animate-fade-out" : "animate-fade-in")} onMouseDown={onClose} aria-hidden="true" />
       <div
         ref={panel}
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className={cn("relative w-full max-w-lg animate-pop-in rounded-window bg-surface shadow-window", className)}
+        className={cn("relative w-full max-w-lg overflow-hidden rounded-window bg-elevated shadow-window", closing ? "animate-pop-out" : "animate-pop-in", className)}
       >
         {children}
       </div>
     </div>,
     document.body,
   );
+}
+
+/** Standard modal layout: padded body with a title, then a footer bar for actions. */
+export function DialogBody({ title, description, children, className }: { title?: ReactNode; description?: ReactNode; children?: ReactNode; className?: string }) {
+  return (
+    <div className={cn("flex flex-col gap-4 p-6", className)}>
+      {(title || description) && (
+        <div className="flex flex-col gap-1.5">
+          {title && <h2 className="text-base font-semibold text-fg">{title}</h2>}
+          {description && <p className="text-[13px] leading-relaxed text-fg-2">{description}</p>}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+export function DialogFooter({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={cn("flex items-center justify-end gap-2 border-t border-line bg-surface px-6 py-3", className)}>{children}</div>;
 }

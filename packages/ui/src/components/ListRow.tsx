@@ -10,7 +10,10 @@ export interface ListRowProps extends Omit<HTMLAttributes<HTMLDivElement>, "pref
   trailing?: ReactNode;
 }
 
-/** A dense, keyboard-addressable row. Used by the message list and bundles. */
+/**
+ * A dense, keyboard-addressable row inset from the list edges. Hover and the
+ * keyboard cursor share a soft fill; the open thread gets a stronger one.
+ */
 export const ListRow = forwardRef<HTMLDivElement, ListRowProps>(function ListRow(
   { selected, active, unread, leading, trailing, className, children, ...rest },
   ref,
@@ -25,12 +28,10 @@ export const ListRow = forwardRef<HTMLDivElement, ListRowProps>(function ListRow
       data-focus-inset
       tabIndex={active ? 0 : -1}
       className={cn(
-        "group relative flex cursor-default select-none gap-3 border-b border-line px-4 py-2.5 outline-none",
-        "transition-colors duration-[var(--motion-fast)] ease-out",
-        "hover:bg-hover",
-        selected && "bg-active hover:bg-active",
-        "before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:origin-center before:scale-y-0 before:bg-fg before:transition-transform before:duration-[var(--motion-normal)] before:ease-spring",
-        active && "before:scale-y-100",
+        "group/row relative mx-2 flex cursor-default select-none gap-3 rounded-card px-3 py-2.5 outline-none",
+        "transition-[background-color,box-shadow] duration-[var(--motion-fast)] ease-out",
+        selected ? "bg-active" : active ? "bg-hover" : "hover:bg-hover",
+        active && "shadow-[inset_0_0_0_1px_var(--o-line-hover)]",
         className,
       )}
       {...rest}

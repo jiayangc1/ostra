@@ -27,7 +27,8 @@ export interface CommandMenuProps {
   /** Keep the menu open after running (multi-select pickers). */
   keepOpen?: boolean;
   emptyText?: string;
-  footer?: ReactNode;
+  /** Hint line under the list; false hides it. */
+  footer?: ReactNode | false;
 }
 
 /** The searchable list used by ⌘K and pickers (label, category, move). */
@@ -96,17 +97,17 @@ export function CommandMenu({ items, placeholder = "Type a command or search…"
           aria-expanded="true"
           aria-controls={listId}
           aria-activedescendant={filtered[cursor] ? `${listId}-${filtered[cursor].id}` : undefined}
-          className="h-12 flex-1 bg-transparent text-[15px] text-fg outline-none placeholder:text-fg-3 focus-visible:outline-none"
+          className="h-[52px] flex-1 bg-transparent text-[15px] text-fg outline-none placeholder:text-fg-3 focus-visible:outline-none"
         />
         <Kbd keys="esc" />
       </div>
       <div ref={listRef} id={listId} role="listbox" className="max-h-[min(60vh,420px)] overflow-y-auto p-1.5">
-        {filtered.length === 0 && <p className="px-3 py-8 text-center text-[13px] text-fg-3">{emptyText}</p>}
+        {filtered.length === 0 && <p className="animate-fade-in px-3 py-10 text-center text-[13px] text-fg-3">{emptyText}</p>}
         {filtered.map((item, index) => {
           const showGroup = grouped && item.group && item.group !== filtered[index - 1]?.group;
           return (
             <div key={item.id}>
-              {showGroup && <div className="px-2.5 pb-1 pt-2.5 font-mono text-[11px] uppercase tracking-wide text-fg-3">{item.group}</div>}
+              {showGroup && <div className="px-2.5 pb-1 pt-3 text-[12px] font-medium text-fg-3 first:pt-1.5">{item.group}</div>}
               <div
                 id={`${listId}-${item.id}`}
                 role="option"
@@ -117,12 +118,12 @@ export function CommandMenu({ items, placeholder = "Type a command or search…"
                 onClick={() => run(item)}
                 className={cn(
                   "flex h-9 cursor-default items-center gap-2.5 rounded-control px-2.5 text-sm transition-colors duration-[var(--motion-instant)]",
-                  index === cursor ? "bg-active text-fg" : "text-fg-2",
+                  index === cursor ? "bg-active text-fg" : "text-fg",
                   item.disabled && "opacity-50",
                 )}
               >
                 {item.icon && (
-                  <span className={cn("flex w-4 shrink-0 justify-center transition-transform duration-[var(--motion-fast)] ease-spring", index === cursor && "translate-x-0.5")}>
+                  <span className={cn("flex w-4 shrink-0 justify-center text-fg-3 transition-[translate,color] duration-[var(--motion-fast)] ease-spring", index === cursor && "translate-x-0.5 text-fg")}>
                     {item.icon}
                   </span>
                 )}
@@ -131,11 +132,15 @@ export function CommandMenu({ items, placeholder = "Type a command or search…"
                   <span
                     aria-hidden="true"
                     className={cn(
-                      "flex h-4 w-4 items-center justify-center rounded-[4px] border text-[10px] transition-colors",
-                      item.checked ? "border-transparent bg-primary text-primary-fg" : "border-line-hover",
+                      "flex h-4 w-4 items-center justify-center rounded-[4px] border transition-[background-color,border-color] duration-[var(--motion-fast)]",
+                      item.checked ? "border-transparent bg-primary text-primary-fg" : "border-line-strong",
                     )}
                   >
-                    {item.checked ? "✓" : ""}
+                    {item.checked && (
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                        <path d="M2.5 6.2 4.8 8.5 9.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" pathLength={24} className="o-check-draw" />
+                      </svg>
+                    )}
                   </span>
                 )}
                 {item.hint && <span className="font-mono text-[11px] text-fg-3">{item.hint}</span>}
@@ -145,7 +150,21 @@ export function CommandMenu({ items, placeholder = "Type a command or search…"
           );
         })}
       </div>
-      {footer && <div className="border-t border-line px-4 py-2 text-[12px] text-fg-3">{footer}</div>}
+      {footer !== false && (
+      <div className="flex items-center gap-4 border-t border-line bg-surface px-4 py-2 text-[12px] text-fg-3">
+        {footer ?? (
+          <>
+            <span className="flex items-center gap-1.5">
+              <Kbd keys="up" />
+              <Kbd keys="down" /> to navigate
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Kbd keys="enter" /> to select
+            </span>
+          </>
+        )}
+      </div>
+      )}
     </div>
   );
 }

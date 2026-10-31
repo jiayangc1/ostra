@@ -27,7 +27,7 @@ export function Kbd({ keys, className }: { keys: string; className?: string }) {
           {combo.split("+").map((k, j) => (
             <kbd
               key={j}
-              className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[4px] border border-line bg-surface px-1 font-mono text-[11px] leading-none text-fg-3"
+              className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[4px] border border-line bg-hover px-1 font-sans text-[11px] font-medium leading-none text-fg-3"
             >
               {SYMBOLS[k.toLowerCase()] ?? (k.length === 1 ? k.toUpperCase() : k)}
             </kbd>
