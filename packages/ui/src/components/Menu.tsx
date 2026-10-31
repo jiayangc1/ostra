@@ -87,7 +87,6 @@ export function Menu({ trigger, items, side = "bottom", align = "start", width, 
     window.addEventListener("pointerdown", onDown);
     window.addEventListener("blur", () => close(false), { once: true });
     return () => window.removeEventListener("pointerdown", onDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const select = (item: Item | undefined) => {

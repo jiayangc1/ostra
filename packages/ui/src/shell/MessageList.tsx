@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Account, Color, Label, ThreadSummary } from "@ostra/core";
 import { displayName } from "@ostra/core";
 import { Archive, Bell, ChevronRight, Mail, MailOpen, Newspaper, Paperclip, Tag, Trash2 } from "lucide-react";
@@ -38,37 +38,37 @@ type Ghost = { id: string; index: number; thread: ThreadSummary; nested: boolean
  * rows that just arrived (new mail, undo) grow in. Bulk changes skip both.
  */
 function useRowMotion(listKey: string, rows: Row[], threads: Record<string, ThreadSummary>) {
-  const prev = useRef<{ key: string; rows: Row[] } | null>(null);
-  const [ghosts, setGhosts] = useState<Ghost[]>([]);
-  const [entering, setEntering] = useState<ReadonlySet<string>>(new Set());
+  const [track, setTrack] = useState({ key: listKey, rows, ghosts: [] as Ghost[], entering: [] as string[], stamp: 0 });
 
-  useLayoutEffect(() => {
-    const before = prev.current;
-    prev.current = { key: listKey, rows };
-    if (before && before.key !== listKey) {
-      setGhosts([]);
-      return;
+  // Diffed during render (no effect pass): rows that left become ghosts, rows that arrived animate in.
+  if (track.rows !== rows || track.key !== listKey) {
+    let ghosts: Ghost[] = [];
+    let entering: string[] = [];
+    if (track.key === listKey) {
+      const now = new Set(rows.flatMap((r) => (r.kind === "thread" ? [r.id] : [])));
+      const was = new Set(track.rows.flatMap((r) => (r.kind === "thread" ? [r.id] : [])));
+      const removed: Ghost[] = [];
+      track.rows.forEach((r, index) => {
+        if (r.kind === "thread" && !now.has(r.id) && threads[r.id]) removed.push({ id: r.id, index, thread: threads[r.id]!, nested: !!r.bundle });
+      });
+      const added = [...now].filter((id) => !was.has(id));
+      ghosts = track.ghosts.filter((g) => !now.has(g.id));
+      entering = track.entering.filter((id) => now.has(id));
+      // Collapsing a bundle removes many rows at once: that's a layout change, not mail leaving.
+      if (removed.length > 0 && removed.length <= 3 && !removed.some((g) => g.nested)) ghosts = [...ghosts, ...removed];
+      if (added.length > 0 && added.length <= 3) entering = [...entering, ...added];
     }
-    if (!before || before.rows === rows) return;
-    const now = new Set(rows.flatMap((r) => (r.kind === "thread" ? [r.id] : [])));
-    const was = new Set(before.rows.flatMap((r) => (r.kind === "thread" ? [r.id] : [])));
-    const removed: Ghost[] = [];
-    before.rows.forEach((r, index) => {
-      if (r.kind === "thread" && !now.has(r.id) && threads[r.id]) removed.push({ id: r.id, index, thread: threads[r.id]!, nested: !!r.bundle });
-    });
-    const added = [...now].filter((id) => !was.has(id));
-    // Collapsing a bundle removes many rows at once: that's a layout change, not mail leaving.
-    if (removed.length > 0 && removed.length <= 3 && !removed.some((g) => g.nested)) {
-      setGhosts((g) => [...g.filter((x) => !now.has(x.id)), ...removed]);
-      setTimeout(() => setGhosts((g) => g.filter((x) => !removed.includes(x))), 260);
-    }
-    if (added.length > 0 && added.length <= 3) {
-      setEntering((s) => new Set([...s, ...added]));
-      setTimeout(() => setEntering((s) => new Set([...s].filter((id) => !added.includes(id)))), 340);
-    }
-  }, [listKey, rows, threads]);
+    setTrack({ key: listKey, rows, ghosts, entering, stamp: track.stamp + 1 });
+  }
 
-  return { ghosts, entering };
+  const busy = track.ghosts.length > 0 || track.entering.length > 0;
+  useEffect(() => {
+    if (!busy) return;
+    const t = setTimeout(() => setTrack((s) => ({ ...s, ghosts: [], entering: [] })), 340);
+    return () => clearTimeout(t);
+  }, [busy, track.stamp]);
+
+  return { ghosts: track.ghosts, entering: new Set(track.entering) };
 }
 
 export function MessageList({ listKey, rows, threads, accounts, labels, cursor, openId, onActivate, onAction, onEndReached, canArchive }: Props) {

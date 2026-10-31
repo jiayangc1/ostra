@@ -37,7 +37,7 @@ export function Onboarding({ openExternal }: { openExternal?: (url: string) => v
 
   return (
     <div className="flex min-h-full flex-col bg-canvas">
-      <header className="flex h-16 items-center justify-between border-b border-line px-6">
+      <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-line bg-canvas/80 px-6 backdrop-blur-md">
         <OstraLogo />
         <ol className="flex items-center gap-2 font-mono text-[11px] text-fg-3" aria-label="Steps">
           {STEPS.map((s, i) => (
@@ -55,6 +55,11 @@ export function Onboarding({ openExternal }: { openExternal?: (url: string) => v
             </li>
           ))}
         </ol>
+        <span
+          aria-hidden="true"
+          className="absolute inset-x-0 -bottom-px h-px origin-left bg-fg transition-transform duration-[var(--motion-slow)] ease-out"
+          style={{ transform: `scaleX(${(step + 1) / STEPS.length})` }}
+        />
       </header>
       <main className="flex flex-1 justify-center px-4 py-12">
         <div key={step} className="flex w-full max-w-2xl animate-slide-up flex-col gap-8">
@@ -181,8 +186,8 @@ function LabelsStep({ onBack, onNext }: { onBack: () => void; onNext: () => void
               data-template={t.id}
               onClick={() => toggle(t.id)}
               className={cn(
-                "group o-press relative flex flex-col gap-3 rounded-card border p-4 text-left hover:-translate-y-px",
-                on ? "border-line-strong bg-hover" : "border-line bg-surface hover:border-line-hover",
+                "group o-lift relative flex flex-col gap-3 rounded-card border p-4 text-left",
+                on ? "border-line-strong bg-hover shadow-[0_0_0_1px_var(--o-line-strong)]" : "border-line bg-surface hover:border-line-hover",
               )}
             >
               <span className="flex items-start justify-between gap-2">
@@ -216,9 +221,9 @@ function LabelsStep({ onBack, onNext }: { onBack: () => void; onNext: () => void
         <label htmlFor="custom-label" className="text-[13px] font-medium text-fg-2">
           Your own labels
         </label>
-        <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-control border border-line bg-canvas px-2 py-1.5 focus-within:border-line-strong">
+        <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-control border border-line bg-canvas px-2 py-1.5 transition-[border-color,box-shadow] duration-[var(--motion-fast)] hover:border-line-hover focus-within:border-line-strong focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--o-focus)_22%,transparent)]">
           {custom.map((c) => (
-            <span key={c} className="flex items-center gap-1 rounded-full bg-gray-bg py-0.5 pl-2 pr-1 font-mono text-[11px] text-gray">
+            <span key={c} className="flex animate-pop-in items-center gap-1 rounded-full bg-gray-bg py-0.5 pl-2 pr-1 text-[12px] font-medium text-gray">
               {c}
               <button type="button" aria-label={`Remove ${c}`} onClick={() => setCustom((x) => x.filter((y) => y !== c))} className="rounded-full p-0.5 hover:text-fg">
                 <X size={10} />
@@ -287,8 +292,17 @@ function FinishStep({ onBack }: { onBack: () => void }) {
           <legend className="mb-2 text-[13px] font-medium text-fg-2">Default from address</legend>
           <div className="flex flex-col divide-y divide-line rounded-window border border-line" role="radiogroup">
             {identities.map((i) => (
-              <label key={i.id} className="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-hover">
-                <input type="radio" name="identity" checked={identityId === i.id} onChange={() => setIdentityId(i.id)} className="accent-[var(--o-fg)]" />
+              <label key={i.id} className={cn("flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors duration-[var(--motion-fast)] hover:bg-hover", identityId === i.id && "bg-hover")}>
+                <input type="radio" name="identity" checked={identityId === i.id} onChange={() => setIdentityId(i.id)} className="peer sr-only" />
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors duration-[var(--motion-fast)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus",
+                    identityId === i.id ? "border-fg bg-fg" : "border-line-strong",
+                  )}
+                >
+                  <span className={cn("h-1.5 w-1.5 rounded-full bg-canvas transition-transform duration-[var(--motion-normal)] ease-spring", identityId === i.id ? "scale-100" : "scale-0")} />
+                </span>
                 {accounts.get(i.accountId) && <Dot color={accounts.get(i.accountId)!.color} />}
                 <span className="flex-1 truncate text-sm">{i.address}</span>
                 {i.displayName && <span className="text-[13px] text-fg-3">{i.displayName}</span>}
@@ -307,7 +321,7 @@ function FinishStep({ onBack }: { onBack: () => void }) {
               role="radio"
               aria-checked={preference === t.id}
               onClick={() => setPreference(t.id)}
-              className={cn("o-press flex h-10 items-center justify-center gap-2 rounded-card border text-sm", preference === t.id ? "border-line-strong bg-hover text-fg" : "border-line text-fg-2 hover:border-line-hover")}
+              className={cn("o-lift flex h-10 items-center justify-center gap-2 rounded-card border text-sm", preference === t.id ? "border-line-strong bg-hover text-fg shadow-[0_0_0_1px_var(--o-line-strong)]" : "border-line text-fg-2 hover:border-line-hover")}
             >
               {t.icon}
               {t.name}

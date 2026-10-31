@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useState, type FormEvent } from "react";
 import { guessServers, presetById, presetForAddress, type Color, type ImapPreset } from "@ostra/core";
-import { ArrowLeft, ArrowUpRight, AtSign, Check, Cloud, Copy, Globe, Mail, Server } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, AtSign, Check, Cloud, Copy, Globe, Mail, Server } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import { Input } from "../components/Input.tsx";
 import { Toggle } from "../components/Toggle.tsx";
@@ -56,8 +56,8 @@ export function ConnectAccount({ defaultColor, returnTo, onConnected, openExtern
     const preset = APP_PASSWORD[kind] ? presetById(APP_PASSWORD[kind]) : null;
     return (
       <div className="flex animate-slide-up flex-col gap-5">
-        <button type="button" onClick={() => setKind(null)} className="o-press flex w-fit items-center gap-1.5 rounded-control text-[13px] text-fg-3 hover:text-fg">
-          <ArrowLeft size={14} /> All providers
+        <button type="button" onClick={() => setKind(null)} className="o-press group flex w-fit items-center gap-1.5 rounded-control text-[13px] text-fg-3 hover:text-fg">
+          <ArrowLeft size={14} className="transition-transform duration-[var(--motion-fast)] ease-spring group-hover:-translate-x-0.5" /> All providers
         </button>
         {kind === "gmail" && (
           <>
@@ -95,11 +95,14 @@ export function ConnectAccount({ defaultColor, returnTo, onConnected, openExtern
             type="button"
             disabled={busy !== null}
             onClick={() => (p.kind === "outlook" ? void oauth(p.kind) : setKind(p.kind))}
-            className="group o-press flex items-start gap-3 rounded-card border border-line bg-surface p-4 text-left hover:-translate-y-px hover:border-line-hover hover:bg-hover disabled:opacity-60"
+            className="group o-lift flex items-start gap-3 rounded-card border border-line bg-panel p-4 text-left hover:border-line-hover disabled:opacity-60"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-line bg-canvas text-fg">{p.icon}</span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-line bg-surface text-fg transition-transform duration-[var(--motion-normal)] ease-spring group-hover:scale-105">{p.icon}</span>
             <span className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-fg">{busy === p.kind ? "Opening…" : p.name}</span>
+              <span className="flex items-center gap-1.5 text-sm font-medium text-fg">
+                {busy === p.kind ? "Opening…" : p.name}
+                <ArrowRight size={13} className="-translate-x-1 text-fg-3 opacity-0 transition-[opacity,translate] duration-[var(--motion-fast)] ease-out group-hover:translate-x-0 group-hover:opacity-100" />
+              </span>
               <span className="text-[13px] text-fg-3">{p.blurb}</span>
             </span>
           </button>
@@ -351,7 +354,7 @@ export function ResendWebhookStep({ accountId, url, onDone }: { accountId: strin
           In Resend, add a webhook for <span className="font-mono text-fg-2">email.received</span> with this URL, then paste its signing secret.
         </p>
       </div>
-      <div className="flex items-center gap-2 rounded-control border border-line bg-surface px-3 py-2">
+      <div className="flex items-center gap-2 rounded-control border border-line bg-surface py-1 pl-3 pr-1">
         <code className="min-w-0 flex-1 truncate font-mono text-[12px] text-fg-2">{url}</code>
         <Button
           size="sm"
@@ -364,7 +367,7 @@ export function ResendWebhookStep({ accountId, url, onDone }: { accountId: strin
             setTimeout(() => setCopied(false), 1500);
           }}
         >
-          {copied ? <Check size={14} className="text-green" /> : <Copy size={14} />}
+          {copied ? <Check size={14} className="animate-pop-in text-green" /> : <Copy size={14} />}
         </Button>
       </div>
       <Input label="Signing secret" required value={secret} onChange={(e) => setSecret(e.target.value.trim())} placeholder="whsec_…" />

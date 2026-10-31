@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { useMailStore, useStore } from "../app/store.ts";
 import type { ComposeRequest } from "../shell/Shell.tsx";
 import { AiDraftLine } from "./AiDraftLine.tsx";
@@ -9,6 +9,12 @@ import { draftFor } from "./model.ts";
 export function ComposerHost({ children }: { children: (api: { compose: (r: ComposeRequest) => void; readerFooter: (threadId: string) => ReactNode }) => ReactNode }) {
   const store = useMailStore();
   const own = useStore((s) => s.boot?.identities)?.map((i) => i.address) ?? [];
+  // Fetch the composer chunk once the shell is idle, so the first "c" opens it instantly
+  // and keystrokes typed right after land in the To field, not on list shortcuts.
+  useEffect(() => {
+    const t = setTimeout(() => void import("./Composer.tsx"), 1500);
+    return () => clearTimeout(t);
+  }, []);
   const [open, setOpen] = useState<(ComposeRequest & { key: number; closing?: boolean }) | null>(null);
 
   const compose = (r: ComposeRequest) => setOpen((prev) => ({ ...r, key: (prev?.key ?? 0) + 1 }));
