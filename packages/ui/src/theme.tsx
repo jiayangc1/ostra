@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 
 export type ThemePreference = "dark" | "light" | "system";
 type Resolved = "dark" | "light";
@@ -34,7 +34,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const resolved: Resolved = preference === "system" ? system : preference;
 
-  useEffect(() => {
+  // Layout effect so children reading theme tokens in their own effects see the new values.
+  useLayoutEffect(() => {
     document.documentElement.dataset.theme = resolved;
   }, [resolved]);
 
