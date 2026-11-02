@@ -1,13 +1,21 @@
 ---
-/** The converge mark, inline so it follows the theme's foreground color. */
+/**
+ * The converge mark, inline so it follows the theme's foreground color.
+ * Three strokes (one per path) so `draw` can trace them in one after another.
+ */
 interface Props {
   size?: number;
   class?: string;
+  draw?: boolean;
 }
-const { size = 24, class: className } = Astro.props;
+const { size = 24, class: className, draw = false } = Astro.props;
 ---
 
-<svg viewBox="0 0 44 44" width={size} height={size} fill="none" aria-hidden="true" class={className}>
-  <path d="M6 8 C20 8 20 22 30 22 M6 22 L30 22 M6 36 C20 36 20 22 30 22" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path>
+<svg viewBox="0 0 44 44" width={size} height={size} fill="none" aria-hidden="true" class:list={[className, draw && "mark-draw"]}>
+  <g stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 8 C20 8 20 22 30 22" pathLength="1"></path>
+    <path d="M6 22 L30 22" pathLength="1"></path>
+    <path d="M6 36 C20 36 20 22 30 22" pathLength="1"></path>
+  </g>
   <circle cx="35" cy="22" r="4" fill="currentColor"></circle>
 </svg>

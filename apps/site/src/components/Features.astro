@@ -1,0 +1,201 @@
+---
+/**
+ * Four features, each shown as a small working piece of the app. The script
+ * plays a demo while its panel is on screen; without the script (or with
+ * reduced motion) each panel shows its finished state.
+ */
+import { ACCOUNTS } from "../data/demo.ts";
+import Icon from "./Icon.astro";
+
+const DRAFT = "Hi Priya, thanks for the kind words. I'll send the updated model by Wednesday evening, with the revised hiring plan included.";
+
+const keyRows = [
+  { account: "n", sender: "Marcus Chen", subject: "Q4 roadmap review moved to 3pm" },
+  { account: "t", sender: "Priya Natarajan", subject: "Re: Tidepool seed: next steps" },
+  { account: "t", sender: "Jordan Blake", subject: "Pilot feedback from the clinic team" },
+  { account: "n", sender: "Aisha Bello", subject: "Interview loop for the staff engineer role" },
+  { account: "g", sender: "Mom", subject: "Sunday dinner?" },
+  { account: "n", sender: "Dana Whitfield", subject: "Contract redlines, two small changes" },
+] as const;
+
+const keys = [
+  { key: "j", cap: "J", label: "next" },
+  { key: "k", cap: "K", label: "previous" },
+  { key: "e", cap: "E", label: "archive" },
+  { key: "cmdk", cap: "⌘K", label: "everything else" },
+];
+
+const panel = "vignette relative h-[300px] overflow-hidden rounded-[14px] bg-panel shadow-panel";
+const window = "relative w-full overflow-hidden rounded-[10px] border border-line bg-canvas shadow-menu";
+---
+
+<div class="grid gap-x-6 gap-y-16 md:grid-cols-2">
+  <article data-reveal>
+    <div class={panel} data-vignette="from">
+      <div class="flex h-full items-center justify-center p-6">
+        <div class={`${window} max-w-[380px]`}>
+          <div class="flex h-10 items-center gap-3 border-b border-line px-4">
+            <span class="w-14 shrink-0 text-[12.5px] text-fg-3">To</span>
+            <span class="flex min-w-0 items-center"><span data-to class="truncate font-mono text-[12px] text-fg">marcus@northwind.io</span><span class="caret ml-px"></span></span>
+          </div>
+          <div class="flex h-12 items-center gap-3 border-b border-line px-4">
+            <span class="w-14 shrink-0 text-[12.5px] text-fg-3">From</span>
+            <span data-from class="relative flex h-7 min-w-0 flex-1 items-center">
+              <span data-chip class="absolute left-0 flex h-7 items-center gap-2 rounded-full border border-line bg-panel pl-2.5 pr-3 font-mono text-[11.5px] text-fg">
+                <span data-chip-dot class="size-2 rounded-full" style={`background: var(--o-${ACCOUNTS.n.color})`}></span>
+                <span data-chip-text>{ACCOUNTS.n.address}</span>
+              </span>
+            </span>
+          </div>
+          <div class="flex h-10 items-center gap-3 border-b border-line px-4">
+            <span class="w-14 shrink-0 text-[12.5px] text-fg-3">Subject</span>
+            <span data-subject class="truncate text-[12.5px] text-fg-2">Q4 roadmap</span>
+            <span data-why class="ml-auto shrink-0 text-[11px] text-fg-3">last used with Marcus</span>
+          </div>
+          <div class="space-y-2.5 px-4 py-4">
+            <div class="h-1.5 w-[86%] rounded-full bg-hover"></div>
+            <div class="h-1.5 w-[70%] rounded-full bg-hover"></div>
+            <div class="h-1.5 w-[42%] rounded-full bg-hover"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3 class="mt-5 text-[15px] font-medium tracking-[-0.01em] text-fg">Never the wrong address</h3>
+    <p class="mt-1.5 max-w-md text-[14.5px] leading-relaxed text-fg-2">Replies go out from the address the mail was sent to. New mail goes out from the one you last used with that person.</p>
+  </article>
+
+  <article data-reveal style="--d: 120">
+    <div class={panel} data-vignette="draft">
+      <div class="flex h-full items-center justify-center p-6">
+        <div class="w-full max-w-[400px]">
+          <div class="flex items-center gap-2.5">
+            <span class="flex size-6 items-center justify-center rounded-full bg-purple-bg text-[10px] font-semibold text-purple">PN</span>
+            <span class="text-[13px] font-medium text-fg">Priya Natarajan</span>
+            <span class="ml-auto font-mono text-[11px] text-fg-3">6m</span>
+          </div>
+          <p class="mt-1.5 pl-[34px] text-[13px] leading-relaxed text-fg-2">Could you send the updated model before Thursday? We'd like to move to a term sheet next week.</p>
+          <div class={`${window} mt-4 p-3.5`}>
+            <div class="flex items-center gap-1.5 text-[11.5px] text-fg-3">
+              <Icon name="sparkles" size={12} />
+              Suggested reply
+              <span data-thinking class="thinking ml-1 hidden items-center gap-1"><span></span><span></span><span></span></span>
+              <kbd class="ml-auto rounded-[4px] border border-line bg-surface px-1.5 py-px font-mono text-[10.5px]">Tab</kbd>
+            </div>
+            <p data-draft class="draft-text mt-2 min-h-[64px] text-[13px] leading-relaxed text-fg">{DRAFT}</p>
+            <div class="mt-3 flex gap-1.5">
+              <span data-tone="shorter" class="tone rounded-full border border-line px-2.5 py-0.5 text-[11.5px] text-fg-2">Shorter</span>
+              <span data-tone="warmer" class="tone rounded-full border border-line px-2.5 py-0.5 text-[11.5px] text-fg-2">Warmer</span>
+              <span data-tone="formal" class="tone rounded-full border border-line px-2.5 py-0.5 text-[11.5px] text-fg-2">More formal</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3 class="mt-5 text-[15px] font-medium tracking-[-0.01em] text-fg">Drafts in your voice</h3>
+    <p class="mt-1.5 max-w-md text-[14.5px] leading-relaxed text-fg-2">A suggested reply waits under every conversation. Press Tab to open it, then make it shorter, warmer or more formal.</p>
+  </article>
+
+  <article data-reveal>
+    <div class={panel} data-vignette="check">
+      <div class="flex h-full items-center justify-center p-6">
+        <div class={`${window} max-w-[400px]`}>
+          <div class="flex h-10 items-center gap-3 border-b border-line px-4">
+            <span class="text-[12.5px] text-fg-3">To</span>
+            <span class="font-mono text-[12px] text-fg">priya@foundry.vc</span>
+          </div>
+          <p class="px-4 pt-3.5 text-[13px] leading-relaxed text-fg">Hi Priya, I've attached the updated model and the hiring plan. Talk Thursday.</p>
+          <div data-attach class="o-expand" data-open="false">
+            <div>
+              <div class="px-4 pt-3">
+                <span class="inline-flex items-center gap-2 rounded-[7px] border border-line bg-surface py-1.5 pl-2 pr-3 text-[12px] text-fg">
+                  <Icon name="sheet" size={14} class="text-green" />
+                  tidepool-model-v4.xlsx
+                  <span class="font-mono text-[11px] text-fg-3">84 KB</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div data-warn class="o-expand" data-open="false">
+            <div>
+              <div class="mx-3 mt-3 rounded-[8px] border border-amber/25 bg-amber-bg px-3 py-2.5">
+                <p class="flex items-start gap-2 text-[12.5px] leading-snug text-fg">
+                  <Icon name="alert" size={14} class="mt-px shrink-0 text-amber" />
+                  You mention an attachment, but nothing is attached.
+                </p>
+                <div class="mt-2 flex gap-1.5 pl-[22px]">
+                  <span data-attach-btn class="rounded-[6px] bg-primary px-2.5 py-1 text-[11.5px] font-medium text-primary-fg transition-transform duration-150">Attach file</span>
+                  <span class="rounded-[6px] border border-line px-2.5 py-1 text-[11.5px] text-fg-2">Send anyway</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 px-3 py-3">
+            <Icon name="paperclip" size={15} class="ml-1 text-fg-3" />
+            <span data-send class="send-btn ml-auto inline-flex h-7 items-center rounded-[7px] bg-primary px-3 text-[12.5px] font-medium text-primary-fg transition-[transform,background-color,color] duration-200">
+              <span class="unsent inline-flex items-center gap-2">Send <span class="font-mono text-[10.5px] opacity-60">⌘↵</span></span>
+              <span class="sent items-center gap-1.5">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="o-check-draw" d="M20 6 9 17l-5-5" pathLength="24"></path></svg>
+                Sent
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3 class="mt-5 text-[15px] font-medium tracking-[-0.01em] text-fg">A second look before send</h3>
+    <p class="mt-1.5 max-w-md text-[14.5px] leading-relaxed text-fg-2">Ostra catches a missing attachment, the wrong account, or a line that reads harsher than you meant. It never stops you from sending.</p>
+  </article>
+
+  <article data-reveal style="--d: 120">
+    <div class={panel} data-vignette="keys">
+      <div class="flex h-full flex-col items-center justify-center gap-6 p-6">
+        <div class="relative w-full max-w-[400px]">
+          <div data-klist class="relative flex h-[180px] flex-col overflow-hidden">
+            <span data-khl class="key-highlight absolute inset-x-0 top-0 h-9 rounded-[8px] bg-active"></span>
+            {
+              keyRows.map((r, i) => (
+                <div class="inbox-row" data-unread={i < 2 ? "" : undefined}>
+                  <div>
+                    <div class="relative flex h-9 items-center gap-2.5 px-3 text-[12.5px]">
+                      <span class="size-2 shrink-0 rounded-full" style={`background: var(--o-${ACCOUNTS[r.account].color})`} />
+                      <span class="sender w-[108px] shrink-0 truncate">{r.sender}</span>
+                      <span class="min-w-0 truncate text-fg-3">{r.subject}</span>
+                      <span data-klabel class="ml-auto shrink-0 rounded-[4px] bg-purple-bg px-1.5 py-px font-mono text-[10.5px] text-purple empty:hidden" />
+                    </div>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+          <div data-palette class="palette absolute inset-x-4 top-3 z-10 overflow-hidden rounded-[10px] bg-elevated shadow-menu">
+            <div class="flex h-10 items-center gap-2 border-b border-line px-3">
+              <Icon name="search" size={14} class="text-fg-3" />
+              <span data-ptext class="font-mono text-[12px] text-fg"></span><span class="caret -ml-1.5"></span>
+            </div>
+            <div class="p-1">
+              <div class="flex h-8 items-center gap-2 rounded-[6px] bg-hover px-2.5 text-[12.5px] text-fg">
+                <span class="size-2 rounded-full bg-purple"></span>
+                Label as Investors
+                <kbd class="ml-auto font-mono text-[11px] text-fg-3">↵</kbd>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-start justify-center gap-4">
+          {
+            keys.map((k) => (
+              <span class="flex flex-col items-center gap-1.5">
+                <kbd data-key={k.key} class="keycap flex h-8 min-w-8 items-center justify-center rounded-[6px] border border-line bg-surface px-2 font-mono text-[12px] text-fg-2">
+                  {k.cap}
+                </kbd>
+                <span class="text-[11px] text-fg-3">{k.label}</span>
+              </span>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+    <h3 class="mt-5 text-[15px] font-medium tracking-[-0.01em] text-fg">Every action has a key</h3>
+    <p class="mt-1.5 max-w-md text-[14.5px] leading-relaxed text-fg-2">Move, archive and label without the mouse, and ⌘K finds everything else. Mail opens instantly because Ostra reads from a local cache first.</p>
+  </article>
+</div>

@@ -1,0 +1,63 @@
+---
+/**
+ * The hero's signature: the converge mark drawn at full size. Three addresses
+ * on the left, their mail travelling through the Ostra dot into one inbox on
+ * the right. Lines and travelling mail only exist from 1024px up; below that
+ * the addresses sit above the inbox and mail lands straight in it.
+ */
+import { ACCOUNTS, ACCOUNT_KEYS, INITIAL, unreadCount } from "../data/demo.ts";
+import InboxRow from "./InboxRow.astro";
+---
+
+<div class="relative" data-stage aria-hidden="true">
+  <div class="grid items-center gap-8 lg:grid-cols-[auto_minmax(140px,1fr)_400px] lg:gap-0">
+    <ul class="flex flex-wrap justify-center gap-2 lg:flex-col lg:items-end lg:gap-[84px]">
+      {
+        ACCOUNT_KEYS.map((key, i) => {
+          const a = ACCOUNTS[key];
+          return (
+            <li data-account={key} data-enter style={`--d: ${700 + i * 90}`} class="flex h-8 items-center gap-2.5 rounded-full border border-line bg-panel pl-3 pr-3.5 shadow-raised">
+              <span class="chip-dot ping relative size-2 rounded-full" style={`background: var(--o-${a.color}); --ping: var(--o-${a.color});`} />
+              <span class="font-mono text-[11.5px] text-fg sm:text-[12px]">{a.address}</span>
+              <span class="hidden text-[12px] text-fg-3 sm:inline">{a.provider}</span>
+            </li>
+          );
+        })
+      }
+    </ul>
+
+    <div class="hidden lg:block" />
+
+    <div data-panel data-enter style="--d: 900" class="mx-auto w-full max-w-[440px] overflow-hidden rounded-[12px] bg-panel shadow-window lg:max-w-none">
+      <div class="flex h-12 items-center gap-2 border-b border-line px-4">
+        <span class="text-sm font-semibold tracking-[-0.01em]">Inbox</span>
+        <span data-count class="rounded-full bg-hover px-1.5 py-px font-mono text-[11px] tabular-nums text-fg-2">{unreadCount(INITIAL)}</span>
+        <span class="ml-auto flex items-center gap-1.5 text-[12px] text-fg-3">
+          All accounts
+          <kbd class="rounded-[4px] border border-line bg-surface px-1.5 py-px font-mono text-[11px]">⌘K</kbd>
+        </span>
+      </div>
+      <div data-list class="inbox-list flex h-[372px] flex-col gap-px overflow-hidden p-1.5">
+        {INITIAL.map((row) => <InboxRow row={row} />)}
+      </div>
+      <template data-tpl="row"><InboxRow /></template>
+    </div>
+  </div>
+
+  <svg data-lines class="stage-lines pointer-events-none absolute inset-0 hidden h-full w-full overflow-visible lg:block" fill="none">
+    <defs>
+      {
+        ACCOUNT_KEYS.map((key) => (
+          <linearGradient id={`flow-${key}`} data-gradient={key} gradientUnits="userSpaceOnUse" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0" stop-color={`var(--o-${ACCOUNTS[key].color})`} stop-opacity="0.8" />
+            <stop offset="1" stop-color="var(--o-line-strong)" stop-opacity="0.9" />
+          </linearGradient>
+        ))
+      }
+    </defs>
+    {ACCOUNT_KEYS.map((key) => <path data-path={key} stroke={`url(#flow-${key})`} stroke-width="1.5" stroke-linecap="round" />)}
+    <path data-merge stroke="var(--o-line-strong)" stroke-width="1.5" stroke-linecap="round" />
+  </svg>
+  <span data-node class="stage-node ping hidden lg:block" />
+</div>
+<p class="sr-only">Mail sent to three addresses, a Gmail account, an Outlook account and a custom domain, arrives in one Ostra inbox. Newsletters and notifications fold into a single row each.</p>

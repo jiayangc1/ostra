@@ -1,12 +1,400 @@
 @import "tailwindcss";
 @import "@ostra/ui/tokens.css";
 
+/* Site-local motion values, so nothing here depends on which theme variables Tailwind emits. */
+:root {
+  --s-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --s-ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+  --s-spring: cubic-bezier(0.34, 1.32, 0.64, 1);
+}
+
 html {
   scroll-behavior: smooth;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
+body {
+  overflow-x: clip;
+}
+
+/* ---------- Load sequence: [data-enter] rises in, staggered by --d (ms) ---------- */
+
+@keyframes s-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(6px);
   }
+}
+
+[data-enter] {
+  animation: s-rise 1000ms var(--s-ease) both;
+  animation-delay: calc(var(--d, 0) * 1ms);
+}
+
+/* ---------- Scroll reveal, only when the script runs ---------- */
+
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 1000ms var(--s-ease),
+    transform 1000ms var(--s-ease);
+  transition-delay: calc(var(--d, 0) * 1ms);
+}
+
+.js [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- Navigation gains a backdrop once the page scrolls ---------- */
+
+.site-nav {
+  border-bottom: 1px solid transparent;
+  transition:
+    background-color 300ms var(--s-ease),
+    border-color 300ms var(--s-ease);
+}
+
+.site-nav[data-scrolled] {
+  background: color-mix(in srgb, var(--o-canvas) 80%, transparent);
+  border-color: var(--o-line);
+  backdrop-filter: blur(12px) saturate(1.4);
+}
+
+.hero-glow {
+  background: radial-gradient(50% 55% at 50% 0%, rgb(255 255 255 / 0.075), transparent 72%);
+}
+
+/* ---------- Hero stage: three addresses converge into one inbox ---------- */
+
+@keyframes s-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes s-pop {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+}
+
+@keyframes s-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+}
+
+.stage-lines {
+  animation: s-wipe 1300ms var(--s-ease-io) 500ms both;
+}
+
+.stage-node {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 999px;
+  background: var(--o-fg);
+  box-shadow: 0 0 0 5px var(--o-canvas);
+  animation: s-pop 700ms var(--s-spring) 1500ms both;
+}
+
+/* Needs a positioned element: the node is absolute, chip dots use `relative`. */
+.ping::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--ping, var(--o-fg));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ping.is-ping::after {
+  animation: s-ping 800ms var(--s-ease) both;
+}
+
+.mail-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 999px;
+  background: var(--c);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--c) 18%, transparent),
+    0 0 18px 2px color-mix(in srgb, var(--c) 55%, transparent);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.inbox-list {
+  mask-image: linear-gradient(to bottom, #000 72%, transparent);
+  transition: opacity 400ms var(--s-ease);
+}
+
+/* ---------- Inbox rows (hero and keyboard demo) ---------- */
+
+.inbox-row {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.inbox-row > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.inbox-row .unread-dot,
+.inbox-row:not([data-unread]) .fresh {
+  display: none;
+}
+
+.inbox-row[data-unread] .unread-dot {
+  display: block;
+}
+
+.inbox-row .sender {
+  font-weight: 500;
+  color: var(--o-fg-2);
+}
+
+.inbox-row[data-unread] .sender {
+  font-weight: 600;
+  color: var(--o-fg);
+}
+
+.inbox-row .subject {
+  color: var(--o-fg-2);
+}
+
+.inbox-row[data-unread] .subject {
+  color: var(--o-fg);
+}
+
+@keyframes s-arrive {
+  from {
+    background: color-mix(in srgb, var(--o-fg) 8%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+.inbox-row.is-entering {
+  animation: o-enter-row 600ms var(--s-ease) both;
+}
+
+.inbox-row.is-entering > * > *,
+.inbox-row.is-flash > * > * {
+  animation: s-arrive 1600ms var(--s-ease) both;
+}
+
+.inbox-row.is-leaving {
+  animation: o-collapse 480ms var(--s-ease-io) both;
+  pointer-events: none;
+}
+
+/* ---------- Feature demos ---------- */
+
+@keyframes s-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.caret {
+  display: inline-block;
+  width: 1px;
+  height: 15px;
+  background: var(--o-fg);
+  animation: s-blink 1s steps(1) infinite;
+}
+
+@keyframes s-swap-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(3px);
+  }
+}
+
+@keyframes s-swap-out {
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+    filter: blur(3px);
+  }
+}
+
+.swap-in {
+  animation: s-swap-in 480ms var(--s-ease) both;
+}
+
+.swap-out {
+  animation: s-swap-out 300ms var(--s-ease-io) both;
+}
+
+@keyframes s-word {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+.word {
+  animation: s-word 500ms var(--s-ease) both;
+}
+
+.draft-text {
+  transition: opacity 220ms var(--s-ease);
+}
+
+.draft-text.is-fading {
+  opacity: 0;
+}
+
+.thinking span {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--o-fg-3);
+  animation: o-dot 1.1s var(--s-ease-io) infinite;
+}
+
+.thinking span:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.thinking span:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+.tone {
+  transition:
+    background-color 200ms var(--s-ease),
+    border-color 200ms var(--s-ease),
+    color 200ms var(--s-ease),
+    transform 160ms var(--s-spring);
+}
+
+.tone[data-active] {
+  background: var(--o-active);
+  border-color: var(--o-line-strong);
+  color: var(--o-fg);
+}
+
+/* Something the demo "presses": a key, a button, a chip. */
+[data-down] {
+  transform: translateY(1px) scale(0.97);
+}
+
+.keycap {
+  box-shadow: inset 0 -1px 0 var(--o-line-hover);
+  transition:
+    transform 140ms var(--s-ease),
+    background-color 180ms var(--s-ease),
+    border-color 180ms var(--s-ease),
+    color 180ms var(--s-ease),
+    box-shadow 180ms var(--s-ease);
+}
+
+.keycap[data-down] {
+  transform: translateY(1px);
+  background: var(--o-active);
+  border-color: var(--o-line-strong);
+  color: var(--o-fg);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--o-focus) 28%, transparent);
+}
+
+.key-highlight {
+  transition:
+    transform 320ms var(--s-spring),
+    opacity 200ms var(--s-ease);
+}
+
+.palette {
+  transition:
+    opacity 200ms var(--s-ease),
+    transform 260ms var(--s-spring);
+}
+
+.palette:not([data-open]) {
+  opacity: 0;
+  transform: translateY(6px) scale(0.97);
+  pointer-events: none;
+}
+
+.send-btn .sent,
+.send-btn[data-sent] .unsent {
+  display: none;
+}
+
+.send-btn[data-sent] .sent {
+  display: inline-flex;
+}
+
+.send-btn[data-sent] {
+  background: var(--o-green-bg);
+  color: var(--o-green);
+}
+
+/* ---------- The closing mark traces itself in ---------- */
+
+@keyframes s-dash {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes s-dot {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.js .mark-draw path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.js .mark-draw circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0);
+}
+
+.js .is-in .mark-draw path {
+  animation: s-dash 900ms var(--s-ease-io) forwards;
+}
+
+.js .is-in .mark-draw path:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.js .is-in .mark-draw path:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+.js .is-in .mark-draw circle {
+  animation: s-dot 600ms var(--s-spring) 900ms forwards;
 }

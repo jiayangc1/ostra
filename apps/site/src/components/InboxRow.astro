@@ -1,0 +1,62 @@
+---
+/**
+ * One row of the hero inbox, styled after the app's list. Rendered on the
+ * server for the first frame, and cloned from a <template> by the script for
+ * mail that arrives later, so both share this markup.
+ */
+import type { Bundle, Mail } from "../data/demo.ts";
+import { ACCOUNTS, CATEGORY_NAMES, initials } from "../data/demo.ts";
+import Icon from "./Icon.astro";
+
+interface Props {
+  row?: Mail | Bundle;
+}
+const { row } = Astro.props;
+const mail = row?.kind === "bundle" ? undefined : row;
+const vars = mail
+  ? `--tint: var(--o-${mail.tint}); --tint-bg: var(--o-${mail.tint}-bg); --acct: var(--o-${ACCOUNTS[mail.account].color});` +
+    (mail.label ? ` --lab: var(--o-${mail.label.color}); --lab-bg: var(--o-${mail.label.color}-bg);` : "")
+  : undefined;
+---
+
+{
+  row?.kind === "bundle" ? (
+    <div class="inbox-row" data-bundle={row.category} data-unread={row.fresh > 0 ? "" : undefined}>
+      <div>
+        <div class="flex items-center gap-3 rounded-[8px] px-3 py-2.5">
+          <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-fg-3">
+            <Icon name={row.category === "newsletters" ? "newspaper" : "bell"} size={13} />
+          </span>
+          <span class="flex min-w-0 items-center gap-2 text-[13px]">
+            <span class="sender">{CATEGORY_NAMES[row.category]}</span>
+            <span data-slot="count" class="font-mono text-[11px] text-fg-3">{row.count}</span>
+            <span data-slot="fresh" class="fresh rounded-full bg-blue-bg px-1.5 py-px text-[11px] font-medium text-blue">{row.fresh} new</span>
+          </span>
+          <Icon name="chevron" size={14} class="ml-auto shrink-0 text-fg-3" />
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div class="inbox-row" data-unread={mail?.unread ? "" : undefined} style={vars}>
+      <div>
+        <div class="flex gap-3 rounded-[8px] px-3 py-2.5">
+          <span class="relative mt-0.5 flex size-7 shrink-0">
+            <span data-slot="initials" class="flex size-7 items-center justify-center rounded-full bg-(--tint-bg) text-[11px] font-semibold tracking-tight text-(--tint)">{mail ? initials(mail.sender) : ""}</span>
+            <span class="absolute -bottom-px -right-px size-2 rounded-full bg-(--acct) ring-2 ring-panel" />
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="flex items-center gap-2">
+              <span class="unread-dot size-1.5 shrink-0 rounded-full bg-blue" />
+              <span data-slot="sender" class="sender truncate text-[13px]">{mail?.sender}</span>
+              <span data-slot="time" class="ml-auto shrink-0 font-mono text-[11px] text-fg-3">{mail?.time}</span>
+            </span>
+            <span class="mt-0.5 flex min-w-0 items-center gap-2">
+              <span data-slot="subject" class="subject truncate text-[13px]">{mail?.subject}</span>
+              <span data-slot="label" class="shrink-0 rounded-[4px] bg-(--lab-bg) px-1.5 py-px font-mono text-[10.5px] text-(--lab) empty:hidden">{mail?.label?.name}</span>
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}

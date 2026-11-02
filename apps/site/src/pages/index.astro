@@ -2,298 +2,119 @@
 import Layout from "../layouts/Layout.astro";
 import Mark from "../components/Mark.astro";
 import Wordmark from "../components/Wordmark.astro";
+import HeroStage from "../components/HeroStage.astro";
+import Features from "../components/Features.astro";
+import WaitlistForm from "../components/WaitlistForm.astro";
 import { SITE } from "../config.ts";
 
-const features = [
-  {
-    title: "One inbox, every address",
-    body: "Gmail, Outlook, any IMAP host and your own domain through Resend, merged into one list sorted by time. A colored dot tells you where each email arrived.",
-    keys: "g i",
-  },
-  {
-    title: "Real mail on top",
-    body: "Newsletters, notifications and promotions fold into quiet rows at their place in time. People who write to you stay in plain sight.",
-    keys: "y",
-  },
-  {
-    title: "Labels that apply themselves",
-    body: "Start from a template pack or your own. Ostra labels mail as it arrives, and every correction teaches it.",
-    keys: "l",
-  },
-  {
-    title: "Never the wrong address",
-    body: "Replies come from the address the mail was sent to. New mail goes out from the address you last used with that person.",
-    keys: "r",
-  },
-  {
-    title: "Drafts in your voice",
-    body: "A suggested reply waits under every conversation. Press Tab to open it, then make it shorter, warmer or more formal.",
-    keys: "tab",
-  },
-  {
-    title: "A second look before send",
-    body: "Ostra catches the wrong account, a missing attachment, or a line that reads harsher than you meant. It never stops you from sending.",
-    keys: "mod+enter",
-  },
+const privacy = [
+  { title: "Encrypted at rest", body: "Passwords, tokens and message bodies are encrypted, each with its own key." },
+  { title: "AI is a switch", body: "Turn it off for everything, for one account or for one label. Off means no mail reaches a model." },
+  { title: "In sync both ways", body: "Archive in Ostra and it's archived in Gmail too. Ostra never changes your mailbox without you." },
 ];
 
-const KEY: Record<string, string> = { mod: "⌘", enter: "↵", tab: "Tab" };
-const caps = (k: string) => k.split(" ").map((combo) => combo.split("+").map((x) => KEY[x] ?? x.toUpperCase()));
-
-const shortcuts = [
-  ["⌘K", "command bar"],
-  ["J K", "move"],
-  ["E", "archive"],
-  ["#", "trash"],
-  ["L", "label"],
-  ["Y", "category"],
-  ["R", "reply"],
-  ["C", "compose"],
-];
-
-const downloads = [
+const desktop = [
   { name: "macOS", url: SITE.downloads.mac },
   { name: "Windows", url: SITE.downloads.windows },
   { name: "Linux", url: SITE.downloads.linux },
 ];
+const year = new Date().getFullYear();
 ---
 
-<Layout title="Ostra: every inbox, one place" description="Ostra merges every email account you own into one fast, keyboard-first inbox, and finds the real mail from real people inside the noise.">
-  <header class="sticky top-0 z-20 border-b border-line bg-canvas/80 backdrop-blur-md">
-    <nav class="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6" aria-label="Main">
+<Layout title="Ostra: every inbox, one place" description="Ostra merges every email account you own into one fast, keyboard-first inbox, and keeps mail from real people above the noise.">
+  <header data-nav class="site-nav fixed inset-x-0 top-0 z-30">
+    <nav class="mx-auto flex h-14 max-w-[1080px] items-center justify-between px-4 sm:px-6" aria-label="Main">
       <a href="/" class="flex items-center gap-2 rounded-control text-fg" aria-label="Ostra home">
         <Mark size={22} />
         <Wordmark height={14} />
       </a>
       <div class="flex items-center gap-1 text-[13px]">
         <a href="#features" class="hidden rounded-control px-3 py-1.5 text-fg-2 transition-colors hover:text-fg sm:inline">Features</a>
-        <a href="#pricing" class="hidden rounded-control px-3 py-1.5 text-fg-2 transition-colors hover:text-fg sm:inline">Pricing</a>
-        <a href="#download" class="hidden rounded-control px-3 py-1.5 text-fg-2 transition-colors hover:text-fg sm:inline">Download</a>
+        <a href="#privacy" class="hidden rounded-control px-3 py-1.5 text-fg-2 transition-colors hover:text-fg sm:inline">Privacy</a>
         <a href={SITE.appUrl} class="rounded-control px-3 py-1.5 text-fg-2 transition-colors hover:text-fg">Sign in</a>
-        <a href="#waitlist" class="ml-1 rounded-control bg-primary px-3 py-1.5 font-medium text-primary-fg transition-[transform,background-color] duration-150 hover:bg-primary-hover active:scale-[0.97]">Join the waitlist</a>
+        <a href="#join" class="o-press ml-1 rounded-control bg-primary px-3 py-1.5 font-medium text-primary-fg hover:bg-primary-hover">Join the waitlist</a>
       </div>
     </nav>
   </header>
 
   <main>
-    <section class="relative overflow-hidden border-b border-line">
-      <div class="mx-auto flex max-w-6xl flex-col items-center px-4 pb-16 pt-20 text-center sm:px-6 sm:pt-28">
-        <Mark size={56} class="mb-8 text-fg" />
-        <h1 class="max-w-3xl text-[44px] font-semibold leading-[1.05] tracking-[-0.045em] sm:text-[64px]">Every inbox. One place.</h1>
-        <p class="mt-6 max-w-xl text-lg leading-relaxed text-fg-2">
-          Ostra brings every address you own into one fast, keyboard-first inbox, and finds the real mail from real people inside the noise.
+    <section class="relative">
+      <div class="hero-glow pointer-events-none absolute inset-x-0 top-0 h-[640px]" aria-hidden="true"></div>
+      <div class="relative mx-auto flex max-w-[1080px] flex-col items-center px-4 pt-28 text-center sm:px-6 lg:pt-32">
+        <h1 class="text-[46px] font-semibold leading-[1.02] tracking-[-0.05em] sm:text-[64px] lg:text-[76px]">
+          <span data-enter class="block" style="--d: 0">Every inbox.</span>
+          <span data-enter class="block" style="--d: 110">One place.</span>
+        </h1>
+        <p data-enter style="--d: 240" class="mt-6 max-w-[34rem] text-[17px] leading-relaxed text-fg-2 sm:text-lg">
+          Ostra brings every address you own into one fast, keyboard-first inbox, and keeps mail from real people above the noise.
         </p>
-        <div class="mt-10 flex flex-wrap items-center justify-center gap-3">
-          <a href="#waitlist" class="rounded-control bg-primary px-4 py-2.5 text-sm font-medium text-primary-fg transition-[transform,background-color] duration-150 hover:bg-primary-hover active:scale-[0.97]">Join the waitlist</a>
-          <a href="#download" class="rounded-control border border-line px-4 py-2.5 text-sm font-medium text-fg transition-colors hover:border-line-hover hover:bg-hover">Get the desktop app</a>
+        <div data-enter style="--d: 360" class="mt-9 flex w-full justify-center">
+          <WaitlistForm id="hero-email" />
         </div>
-        <p class="mt-6 font-mono text-[12px] text-fg-3">Gmail · Outlook · IMAP · your own domain via Resend</p>
+        <p data-enter style="--d: 460" class="text-[12.5px] text-fg-3">Works with Gmail, Outlook, iCloud, Yahoo, any IMAP host and your own domain.</p>
       </div>
-      <div class="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-        <figure class="overflow-hidden rounded-window border border-line-hover shadow-window">
-          <img src="/inbox.jpg" width="2880" height="1760" alt="The Ostra inbox: three accounts in one list, newsletters folded into a bundle row, and a conversation with an investor open." class="block h-auto w-full" />
-        </figure>
+      <div class="mx-auto mt-16 max-w-[1080px] px-4 sm:px-6 lg:mt-20">
+        <HeroStage />
       </div>
     </section>
 
-    <section id="story" class="border-b border-line">
-      <div class="mx-auto grid max-w-6xl gap-10 px-4 py-24 sm:px-6 md:grid-cols-[1fr_1.2fr]">
-        <div>
-          <p class="font-mono text-[12px] uppercase tracking-wide text-fg-3">The name</p>
-          <h2 class="mt-3 text-3xl tracking-[-0.03em]">Ostra means oyster.</h2>
-        </div>
-        <div class="flex flex-col gap-5 text-[17px] leading-relaxed text-fg-2">
-          <p>In Spanish and Portuguese, <span class="text-fg">ostra</span> is an oyster: a plain shell that holds something worth finding.</p>
-          <p>Your inbox is the same. Inside the receipts, digests and alerts there are a few emails from people who are waiting on you. An investor asking for a model. A customer who needs an answer. Your mother asking about Sunday.</p>
-          <p>Ostra opens the shell. Every account flows into one place, the noise folds away, and the pearls stay on top.</p>
-        </div>
+    <section id="features" class="mx-auto max-w-[1080px] scroll-mt-20 px-4 pt-32 sm:px-6 lg:pt-44">
+      <h2 data-reveal class="max-w-xl text-[32px] font-semibold leading-[1.1] tracking-[-0.035em] sm:text-[40px]">
+        Fast enough to keep up.<br /><span class="text-fg-3">Smart enough to sort.</span>
+      </h2>
+      <div class="mt-14">
+        <Features />
       </div>
     </section>
 
-    <section id="features" class="border-b border-line">
-      <div class="mx-auto max-w-6xl px-4 py-24 sm:px-6">
-        <p class="font-mono text-[12px] uppercase tracking-wide text-fg-3">Features</p>
-        <h2 class="mt-3 max-w-xl text-3xl tracking-[-0.03em]">Fast enough to keep up. Smart enough to sort.</h2>
-        <div class="mt-12 grid gap-px overflow-hidden rounded-window border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
-          {
-            features.map((f) => (
-              <article class="group flex flex-col gap-3 bg-canvas p-6 transition-colors duration-200 hover:bg-surface">
-                <div class="flex items-center justify-between">
-                  <h3 class="text-[15px] font-medium tracking-[-0.01em] text-fg">{f.title}</h3>
-                  <span class="flex gap-1">
-                    {caps(f.keys).map((combo) =>
-                      combo.map((k) => <kbd class="inline-flex h-5 min-w-5 items-center justify-center rounded-[4px] border border-line bg-surface px-1 font-mono text-[11px] text-fg-3 transition-colors group-hover:border-line-hover">{k}</kbd>),
-                    )}
-                  </span>
-                </div>
-                <p class="text-[14px] leading-relaxed text-fg-2">{f.body}</p>
-              </article>
-            ))
-          }
-        </div>
-      </div>
-    </section>
-
-    <section class="border-b border-line">
-      <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 py-24 sm:px-6 md:grid-cols-2">
-        <div>
-          <p class="font-mono text-[12px] uppercase tracking-wide text-fg-3">Keyboard first</p>
-          <h2 class="mt-3 text-3xl tracking-[-0.03em]">Your hands never leave the keys.</h2>
-          <p class="mt-4 max-w-md text-[16px] leading-relaxed text-fg-2">Every action has a key, and ⌘K finds the rest. Moving through mail is instant, because Ostra reads from a local cache first.</p>
-        </div>
-        <ul class="grid grid-cols-2 gap-2">
-          {
-            shortcuts.map(([k, label]) => (
-              <li class="flex items-center justify-between rounded-card border border-line px-4 py-3">
-                <span class="text-[14px] text-fg-2">{label}</span>
-                <kbd class="rounded-[4px] border border-line bg-surface px-1.5 py-0.5 font-mono text-[12px] text-fg">{k}</kbd>
-              </li>
-            ))
-          }
-        </ul>
-      </div>
-    </section>
-
-    <section class="border-b border-line">
-      <div class="mx-auto max-w-6xl px-4 py-24 sm:px-6">
-        <p class="font-mono text-[12px] uppercase tracking-wide text-fg-3">Private by design</p>
-        <div class="mt-3 grid gap-10 md:grid-cols-2">
-          <h2 class="text-3xl tracking-[-0.03em]">Your mail stays yours.</h2>
-          <ul class="flex flex-col gap-3 text-[15px] leading-relaxed text-fg-2">
-            <li>Passwords, tokens and message bodies are encrypted at rest, each with its own key.</li>
-            <li>AI is a switch: turn it off for everything, for one account, or for one label. Off means no mail reaches a model.</li>
-            <li>Ostra never changes your mailbox without you. Archive in Ostra, and it's archived in Gmail too.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <section id="pricing" class="border-b border-line">
-      <div class="mx-auto max-w-6xl px-4 py-24 sm:px-6">
-        <p class="font-mono text-[12px] uppercase tracking-wide text-fg-3">Pricing</p>
-        <h2 class="mt-3 text-3xl tracking-[-0.03em]">Free while we're in beta.</h2>
-        <div class="mt-12 grid gap-4 md:grid-cols-2">
-          <div class="flex flex-col gap-6 rounded-window border border-line-strong bg-surface p-8">
-            <div class="flex items-baseline justify-between">
-              <h3 class="text-lg">Beta</h3>
-              <span class="font-mono text-[13px] text-fg-2">$0</span>
+    <section id="privacy" class="mx-auto max-w-[1080px] scroll-mt-20 px-4 pt-32 sm:px-6 lg:pt-44">
+      <h2 data-reveal class="max-w-xl text-[32px] font-semibold leading-[1.1] tracking-[-0.035em] sm:text-[40px]">
+        Your mail stays yours.
+      </h2>
+      <div class="mt-12 grid gap-8 sm:grid-cols-3 sm:gap-6">
+        {
+          privacy.map((p, i) => (
+            <div data-reveal style={`--d: ${i * 100}`} class="border-t border-line pt-5">
+              <h3 class="text-[15px] font-medium tracking-[-0.01em] text-fg">{p.title}</h3>
+              <p class="mt-1.5 text-[14.5px] leading-relaxed text-fg-2">{p.body}</p>
             </div>
-            <ul class="flex flex-col gap-2 text-[14px] text-fg-2">
-              <li>Unlimited accounts</li>
-              <li>AI sorting, labels and drafts</li>
-              <li>Web and desktop</li>
-              <li>A direct line to the people building it</li>
-            </ul>
-            <a href="#waitlist" class="mt-auto rounded-control bg-primary px-4 py-2.5 text-center text-sm font-medium text-primary-fg transition-[transform,background-color] duration-150 hover:bg-primary-hover active:scale-[0.97]">Join the waitlist</a>
-          </div>
-          <div class="flex flex-col gap-6 rounded-window border border-line p-8">
-            <div class="flex items-baseline justify-between">
-              <h3 class="text-lg">Pro</h3>
-              <span class="font-mono text-[13px] text-fg-3">at launch</span>
-            </div>
-            <p class="text-[14px] leading-relaxed text-fg-2">Everything in the beta, plus snooze, send later, follow-up reminders and a focused reply queue. We'll share pricing well before the beta ends, and beta users keep a discount.</p>
-          </div>
-        </div>
+          ))
+        }
       </div>
     </section>
 
-    <section id="download" class="border-b border-line">
-      <div class="mx-auto max-w-6xl px-4 py-24 sm:px-6">
-        <p class="font-mono text-[12px] uppercase tracking-wide text-fg-3">Download</p>
-        <h2 class="mt-3 text-3xl tracking-[-0.03em]">On your desktop, or in any browser.</h2>
-        <div class="mt-10 grid gap-3 sm:grid-cols-4">
-          {
-            downloads.map((d) =>
-              d.url ? (
-                <a href={d.url} class="flex items-center justify-between rounded-card border border-line px-5 py-4 transition-[border-color,background-color,transform] duration-150 hover:-translate-y-px hover:border-line-hover hover:bg-surface">
-                  <span class="text-[15px]">{d.name}</span>
-                  <span class="font-mono text-[12px] text-fg-3">download</span>
-                </a>
-              ) : (
-                <div class="flex items-center justify-between rounded-card border border-dashed border-line px-5 py-4 text-fg-3">
-                  <span class="text-[15px]">{d.name}</span>
-                  <span class="font-mono text-[12px]">soon</span>
-                </div>
-              ),
-            )
-          }
-          <a href={SITE.appUrl} class="flex items-center justify-between rounded-card border border-line px-5 py-4 transition-[border-color,background-color,transform] duration-150 hover:-translate-y-px hover:border-line-hover hover:bg-surface">
-            <span class="text-[15px]">Web</span>
-            <span class="font-mono text-[12px] text-fg-3">open</span>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <section id="waitlist">
-      <div class="mx-auto flex max-w-xl flex-col items-center px-4 py-28 text-center sm:px-6">
-        <Mark size={40} class="text-fg" />
-        <h2 class="mt-8 text-3xl tracking-[-0.03em]">Find the pearls in your inbox.</h2>
-        <p class="mt-3 text-[16px] text-fg-2">We're letting people in a few at a time.</p>
-        <form id="waitlist-form" class="mt-8 flex w-full max-w-md flex-col gap-2 sm:flex-row" data-api={SITE.apiUrl} novalidate>
-          <label for="waitlist-email" class="sr-only">Email address</label>
-          <input
-            id="waitlist-email"
-            name="email"
-            type="email"
-            required
-            autocomplete="email"
-            placeholder="you@company.com"
-            class="h-10 flex-1 rounded-control border border-line bg-canvas px-3 text-sm text-fg outline-none transition-[border-color,box-shadow] placeholder:text-fg-3 hover:border-line-hover focus:border-line-strong focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--o-focus)_22%,transparent)]"
-          />
-          <button type="submit" class="h-10 rounded-control bg-primary px-4 text-sm font-medium text-primary-fg transition-[transform,background-color,opacity] duration-150 hover:bg-primary-hover active:scale-[0.97] disabled:opacity-60">Join</button>
-        </form>
-        <p id="waitlist-status" role="status" aria-live="polite" class="mt-3 min-h-5 text-[13px] text-fg-3"></p>
+    <section id="join" class="scroll-mt-10 px-4 pb-28 pt-36 sm:px-6 lg:pb-36 lg:pt-48">
+      <div data-reveal class="mx-auto flex max-w-xl flex-col items-center text-center">
+        <Mark size={44} draw class="text-fg" />
+        <h2 class="mt-8 text-[32px] font-semibold leading-[1.1] tracking-[-0.035em] sm:text-[40px]">Find the pearls in your inbox.</h2>
+        <p class="mt-4 max-w-md text-[16px] leading-relaxed text-fg-2">
+          <span class="text-fg">Ostra</span> is Spanish and Portuguese for oyster. We're letting people in a few at a time.
+        </p>
+        <WaitlistForm id="join-email" class="mt-9" />
+        <p class="text-[13px] text-fg-3">Free during the beta. Beta users keep a discount when Pro launches.</p>
+        <p class="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 font-mono text-[12px] text-fg-3">
+          <a href={SITE.appUrl} class="text-fg-2 transition-colors hover:text-fg">Open in browser ↗</a>
+          {desktop.map((d) => (d.url ? <a href={d.url} class="text-fg-2 transition-colors hover:text-fg">{d.name}</a> : <span>{d.name} soon</span>))}
+        </p>
       </div>
     </section>
   </main>
 
   <footer class="border-t border-line">
-    <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-[13px] text-fg-3 sm:flex-row sm:px-6">
+    <div class="mx-auto flex max-w-[1080px] flex-col items-center justify-between gap-4 px-4 py-8 text-[13px] text-fg-3 sm:flex-row sm:px-6">
       <a href="/" class="flex items-center gap-2 text-fg-2" aria-label="Ostra home">
         <Mark size={16} />
         <Wordmark height={11} />
       </a>
-      <span>Every inbox, one place.</span>
       <nav class="flex items-center gap-5" aria-label="Legal">
-        <a href="/privacy" class="hover:text-fg">Privacy</a>
-        <a href="/terms" class="hover:text-fg">Terms</a>
+        <span>© {year} Ostra</span>
+        <a href="/privacy" class="transition-colors hover:text-fg">Privacy</a>
+        <a href="/terms" class="transition-colors hover:text-fg">Terms</a>
       </nav>
     </div>
   </footer>
 
   <script>
-    const form = document.getElementById("waitlist-form") as HTMLFormElement;
-    const status = document.getElementById("waitlist-status")!;
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const input = form.elements.namedItem("email") as HTMLInputElement;
-      const button = form.querySelector("button")!;
-      if (!input.checkValidity()) {
-        status.textContent = "Enter a valid email address.";
-        status.className = "mt-3 min-h-5 text-[13px] text-red";
-        input.focus();
-        return;
-      }
-      button.disabled = true;
-      status.className = "mt-3 min-h-5 text-[13px] text-fg-3";
-      status.textContent = "Joining…";
-      try {
-        const res = await fetch(`${form.dataset.api}/public/waitlist`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: input.value, source: "site" }),
-        });
-        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Something went wrong. Try again.");
-        form.reset();
-        status.className = "mt-3 min-h-5 text-[13px] text-green";
-        status.textContent = "You're on the list. We'll write when it's your turn.";
-      } catch (err) {
-        status.className = "mt-3 min-h-5 text-[13px] text-red";
-        status.textContent = err instanceof Error ? err.message : "Something went wrong. Try again.";
-      } finally {
-        button.disabled = false;
-      }
-    });
+    import "../scripts/landing.ts";
   </script>
 </Layout>
