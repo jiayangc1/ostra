@@ -14,7 +14,7 @@ export type JobName = keyof JobMap;
 export type Handlers = { [K in JobName]: (data: JobMap[K]) => Promise<void> };
 
 export interface AddOptions {
-  /** Jobs with the same id are coalesced while one is pending. */
+  /** Jobs with the same id are coalesced while one is pending; one added while it runs queues a single follow-up run. */
   jobId?: string;
   delayMs?: number;
   attempts?: number;
@@ -39,6 +39,8 @@ export function backoffMs(attempt: number, err: unknown): number {
 export class MemoryQueue implements JobQueue {
   private handlers: Handlers | null = null;
   private readonly pending = new Set<string>();
+  private readonly active = new Set<string>();
+  private readonly rerun = new Map<string, { name: JobName; data: unknown; opts: AddOptions }>();
   private readonly backlog: { name: JobName; data: unknown; opts: AddOptions }[] = [];
   private running = 0;
   private closed = false;
@@ -53,6 +55,11 @@ export class MemoryQueue implements JobQueue {
   async add<K extends JobName>(name: K, data: JobMap[K], opts: AddOptions = {}) {
     if (this.closed) return;
     const key = opts.jobId ? `${name}:${opts.jobId}` : null;
+    if (key && this.active.has(key)) {
+      // Running now: run once more after it, with the latest data.
+      this.rerun.set(key, { name, data, opts });
+      return;
+    }
     if (key && this.pending.has(key)) return;
     if (key) this.pending.add(key);
     const enqueue = () => {
@@ -108,14 +115,24 @@ export class MemoryQueue implements JobQueue {
 
   private async run(job: { name: JobName; data: unknown; opts: AddOptions }, attempt: number): Promise<void> {
     const key = job.opts.jobId ? `${job.name}:${job.opts.jobId}` : null;
+    const finish = () => {
+      if (!key) return;
+      this.pending.delete(key);
+      const next = this.rerun.get(key);
+      this.rerun.delete(key);
+      if (next) void this.add(next.name, next.data as never, next.opts);
+    };
+    if (key) this.active.add(key);
     try {
       await (this.handlers![job.name] as (d: unknown) => Promise<void>)(job.data);
-      if (key) this.pending.delete(key);
+      if (key) this.active.delete(key);
+      finish();
     } catch (err) {
+      if (key) this.active.delete(key);
       const max = job.opts.attempts ?? 5;
       if (attempt >= max || this.closed) {
-        if (key) this.pending.delete(key);
         this.log(`job ${job.name} failed after ${attempt} attempts`, err);
+        finish();
         return;
       }
       const wait = backoffMs(attempt, err);
@@ -141,7 +158,10 @@ export async function createBullQueue(redisUrl: string, log: (msg: string, err?:
   return {
     async add(name, data, opts = {}) {
       await queue.add(name, data, {
-        jobId: opts.jobId ? `${name}:${opts.jobId}` : undefined,
+        // Not a custom jobId: BullMQ silently drops adds whose id still sits in the failed set,
+        // which froze an account's sync after one bad run. keepLastIfActive also queues one
+        // follow-up run when a push lands mid-sync instead of dropping it.
+        deduplication: opts.jobId ? { id: `${name}:${opts.jobId}`, keepLastIfActive: true } : undefined,
         delay: opts.delayMs,
         attempts: opts.attempts ?? 5,
         backoff: { type: "exponential", delay: 2000, jitter: 0.5 },

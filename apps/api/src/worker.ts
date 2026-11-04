@@ -37,7 +37,8 @@ export function startBackground(s: Services): () => void {
     const rows = await s.db.select().from(accounts).where(inArray(accounts.status, ["active", "syncing"]));
     for (const a of rows) {
       const expires = a.push?.expiresAt ? Date.parse(a.push.expiresAt) : null;
-      if (!a.push || (expires !== null && expires - Date.now() < 24 * 3600_000)) await startPush(s, a.id);
+      if (!a.push) await startPush(s, a.id);
+      else if (expires !== null && expires - Date.now() < 24 * 3600_000) await startPush(s, a.id, true);
       // Safety net for missed push notifications.
       await s.queue.add("sync", { accountId: a.id, mode: a.syncCursor ? "incremental" : "initial" }, { jobId: `${a.id}:poll` });
     }

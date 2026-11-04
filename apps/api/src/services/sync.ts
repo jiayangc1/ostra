@@ -55,9 +55,12 @@ export async function runSync(s: Services, accountId: string, mode: "initial" | 
 /** Live push subscriptions held by this process (IMAP IDLE). */
 const live = new Map<string, Subscription>();
 
-/** Start push for an account; changes trigger an incremental sync. */
-export async function startPush(s: Services, accountId: string): Promise<void> {
-  if (live.has(accountId)) return;
+/** Start push for an account; changes trigger an incremental sync. `renew` replaces a subscription that's about to expire. */
+export async function startPush(s: Services, accountId: string, renew = false): Promise<void> {
+  if (live.has(accountId)) {
+    if (!renew) return;
+    await stopPush(accountId);
+  }
   const [account] = await s.db.select().from(accounts).where(eq(accounts.id, accountId));
   if (!account || account.status === "disconnected" || account.status === "needs_reauth") return;
   const provider = providerFor(s, account);

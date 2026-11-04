@@ -28,6 +28,10 @@ export class HttpError extends Error {
   }
 }
 
+const RATE_LIMIT_REASONS = new Set(["rateLimitExceeded", "userRateLimitExceeded", "quotaExceeded"]);
+/** Quotas are per minute; retrying sooner just burns attempts. */
+const QUOTA_WINDOW_MS = 60_000;
+
 function retryAfterMs(res: Response): number | null {
   const h = res.headers.get("retry-after");
   if (!h) return null;
@@ -101,7 +105,7 @@ export class OAuthSession {
       res = await go();
       if (res.status === 401) throw new AuthExpiredError("access token rejected after refresh");
     }
-    if (res.status === 429 || res.status === 503) throw new RateLimitedError(`throttled (${res.status})`, retryAfterMs(res));
+    if (res.status === 429 || res.status === 503) throw new RateLimitedError(`throttled (${res.status})`, retryAfterMs(res) ?? (res.status === 429 ? QUOTA_WINDOW_MS : null));
     return res;
   }
 
@@ -110,7 +114,12 @@ export class OAuthSession {
     const text = await res.text();
     const body = text ? (JSON.parse(text) as unknown) : null;
     if (!res.ok) {
-      const msg = (body as { error?: { message?: string } } | null)?.error?.message ?? `HTTP ${res.status}`;
+      const err = (body as { error?: { message?: string; errors?: { reason?: string }[] } } | null)?.error;
+      const msg = err?.message ?? `HTTP ${res.status}`;
+      // Google reports per-user quota as a 403, not a 429.
+      if (res.status === 403 && err?.errors?.some((e) => e.reason && RATE_LIMIT_REASONS.has(e.reason))) {
+        throw new RateLimitedError(msg, retryAfterMs(res) ?? QUOTA_WINDOW_MS);
+      }
       throw new HttpError(res.status, msg, body);
     }
     return body as T;
